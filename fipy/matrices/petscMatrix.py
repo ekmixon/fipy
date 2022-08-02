@@ -70,10 +70,9 @@ class _PETScMatrix(_SparseMatrix):
 
         if other == 0:
             return self
-        else:
-            self.matrix.assemble()
-            other.matrix.assemble()
-            return _PETScMatrix(matrix=self.matrix + other.matrix)
+        self.matrix.assemble()
+        other.matrix.assemble()
+        return _PETScMatrix(matrix=self.matrix + other.matrix)
 
     __radd__ = __add__
 
@@ -81,10 +80,9 @@ class _PETScMatrix(_SparseMatrix):
 
         if other == 0:
             return self
-        else:
-            self.matrix.assemble()
-            other.matrix.assemble()
-            return _PETScMatrix(matrix=self.matrix - other.matrix)
+        self.matrix.assemble()
+        other.matrix.assemble()
+        return _PETScMatrix(matrix=self.matrix - other.matrix)
 
     def __rsub__(self, other):
         return -self + other
@@ -157,18 +155,17 @@ class _PETScMatrix(_SparseMatrix):
                 raise TypeError
 
     def __rmul__(self, other):
-        if type(numerix.ones(1, 'l')) == type(other):
-            N = self._shape[1]
-            x = PETSc.Vec().createMPI(N, comm=self.matrix.comm)
-            y = x.duplicate()
-            x[:] = other
-            self.matrix.multTranspose(x, y)
-            arr = numerix.asarray(y)
-            x.destroy()
-            y.destroy()
-            return arr
-        else:
+        if type(numerix.ones(1, 'l')) != type(other):
             return self * other
+        N = self._shape[1]
+        x = PETSc.Vec().createMPI(N, comm=self.matrix.comm)
+        y = x.duplicate()
+        x[:] = other
+        self.matrix.multTranspose(x, y)
+        arr = numerix.asarray(y)
+        x.destroy()
+        y.destroy()
+        return arr
 
     @property
     def _shape(self):
@@ -621,11 +618,9 @@ class _PETScBaseMeshMatrix(_PETScMatrixFromShape):
         array = numerix.concatenate([corporeal, incorporeal])
 
         comm = self.mesh.communicator.petsc4py_comm
-        vec = PETSc.Vec().createGhostWithArray(ghosts=self._m2m.ghosts.astype('int32'),
-                                               array=array,
-                                               comm=comm)
-
-        return vec
+        return PETSc.Vec().createGhostWithArray(
+            ghosts=self._m2m.ghosts.astype('int32'), array=array, comm=comm
+        )
 
     def _petsc2fipyGhost(self, vec):
         """Convert a PETSc `GhostVec` to a FiPy Variable (form)
@@ -856,25 +851,24 @@ class _PETScMeshMatrix(_PETScRowMeshMatrix):
 
         if isinstance(other, (_PETScMatrix, PETSc.Vec)):
             return _PETScMatrixFromShape.__mul__(self, other=other)
+        shape = numerix.shape(other)
+
+        if shape == ():
+            result = self.copy()
+            result.matrix = self.matrix * other
+            return result
         else:
-            shape = numerix.shape(other)
+            x = other[self._m2m.localNonOverlappingColIDs]
+            x = PETSc.Vec().createWithArray(x, comm=self.matrix.comm)
 
-            if shape == ():
-                result = self.copy()
-                result.matrix = self.matrix * other
-                return result
-            else:
-                x = other[self._m2m.localNonOverlappingColIDs]
-                x = PETSc.Vec().createWithArray(x, comm=self.matrix.comm)
-
-                y = PETSc.Vec().createGhost(ghosts=self._m2m.ghosts.astype('int32'),
-                                            size=(len(self._m2m.localNonOverlappingColIDs), None),
-                                            comm=self.matrix.comm)
-                self.matrix.mult(x, y)
-                arr = self._petsc2fipyGhost(vec=y)
-                x.destroy()
-                y.destroy()
-                return arr
+            y = PETSc.Vec().createGhost(ghosts=self._m2m.ghosts.astype('int32'),
+                                        size=(len(self._m2m.localNonOverlappingColIDs), None),
+                                        comm=self.matrix.comm)
+            self.matrix.mult(x, y)
+            arr = self._petsc2fipyGhost(vec=y)
+            x.destroy()
+            y.destroy()
+            return arr
 
     def takeDiagonal(self):
         self.matrix.assemble()

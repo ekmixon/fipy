@@ -108,11 +108,10 @@ class _Deprecate(object):
         new_name = self.new_name_old_name(old_name=old_name)
 
         if new_name is None:
-            depwarn = (self.old_string + "!") % old_name
+            depwarn = f"{self.old_string}!" % old_name
             depdoc = ""
         else:
-            depwarn = (self.old_string + ", " + self.new_string + "!") % \
-                       (old_name, new_name)
+            depwarn = (f"{self.old_string}, {self.new_string}!" % (old_name, new_name))
             depdoc = self.new_string % new_name
 
         if message is not None:
@@ -126,9 +125,11 @@ class _Deprecate(object):
 
         newfunc = _set_function_name(newfunc, old_name)
 
-        depdoc = (["", "", ".. deprecated:: %s" % self.version]
-                  + ["   " + s for s in depdoc.split('\n')]
-                  + ["", ""])
+        depdoc = (
+            ["", "", f".. deprecated:: {self.version}"]
+            + [f"   {s}" for s in depdoc.split('\n')]
+        ) + ["", ""]
+
         doc = func.__doc__
         if doc is None:
             doc = depdoc
@@ -171,13 +172,12 @@ def deprecate(*args, **kwargs):
     old_func : function
         The deprecated function.
     """
-    if args:
-        fn = args[0]
-        args = args[1:]
-
-        return _Deprecate(*args, **kwargs)(fn)
-    else:
+    if not args:
         return _Deprecate(*args, **kwargs)
+    fn = args[0]
+    args = args[1:]
+
+    return _Deprecate(*args, **kwargs)(fn)
 
 def _test():
     import fipy.tests.doctestPlus

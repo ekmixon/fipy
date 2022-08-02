@@ -56,7 +56,7 @@ class changelog(Command):
         if self.username is not None:
             from getpass import getpass
 
-            password = getpass("Password for 'https://{}@github.com': ".format(self.username))
+            password = getpass(f"Password for 'https://{self.username}@github.com': ")
             self.auth = (username, password)
         else:
             try:
@@ -88,7 +88,7 @@ class changelog(Command):
             try:
                 milestone = milestones[0]
             except IndexError:
-                raise KeyError("Milestone `{}` not found".format(self.milestone))
+                raise KeyError(f"Milestone `{self.milestone}` not found")
 
         return milestone
 
@@ -122,21 +122,19 @@ class changelog(Command):
         s = [textwrap.fill(x.title,
                            initial_indent=prefix,
                            subsequent_indent=hang)]
-        s += [u"{}(`#{} <{}>`_)".format(hang,
-                                        x.number,
-                                        x.html_url)]
-        s += ([u"{}Thanks to `@{} <{}>`_.".format(hang,
-                                                  x.user.login,
-                                                  x.user.html_url)]
-               if x.user.login not in self.collaborators
-               else [])
+        s += [f"{hang}(`#{x.number} <{x.html_url}>`_)"]
+        s += (
+            [f"{hang}Thanks to `@{x.user.login} <{x.user.html_url}>`_."]
+            if x.user.login not in self.collaborators
+            else []
+        )
+
         return "\n".join(s)
 
     def format_issue(self, x):
         prefix = "- "
         hang = " " * len(prefix)
-        s = [prefix + u"`#{} <{}>`_:".format(x.number,
-                                             x.html_url)]
+        s = [(prefix + f"`#{x.number} <{x.html_url}>`_:")]
         s += [textwrap.fill(x.title,
                             initial_indent=hang,
                             subsequent_indent=hang)]
@@ -147,7 +145,7 @@ class changelog(Command):
         """
         import github
         import pandas as pd
-        
+
         self.gh = github.Github(*self.auth)
         self.repo = self.gh.get_repo(self.repository)
 

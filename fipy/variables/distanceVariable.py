@@ -28,15 +28,9 @@ def _parseLSMSolver():
     args = [s.lower() for s in sys.argv[1:]]
     # any command-line specified solver takes precedence over environment variables
     if '--lsmlib' in args:
-        if _checkForLSMLIB():
-            return "lsmlib"
-        else:
-            return None
+        return "lsmlib" if _checkForLSMLIB() else None
     elif '--skfmm' in args:
-        if _checkForSKFMM():
-            return "skfmm"
-        else:
-            return None
+        return "skfmm" if _checkForSKFMM() else None
     elif 'FIPY_LSM' in os.environ:
         return os.environ['FIPY_LSM'].lower()
     elif _checkForLSMLIB():

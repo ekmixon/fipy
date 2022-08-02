@@ -86,7 +86,6 @@ for refinement in range(10):
     viewer = Viewer(vars=potential, xmin=3.5, xmax=4.5, ymin=3.5, ymax=4.5)
 #     viewer = Viewer(vars=(potential, charge))
     viewer.plot()
-
 #     resviewer = Viewer(vars=res1a, log=True, datamin=1e-6, datamax=1e-2, cmap=cm.gray)
 #     monviewer = Viewer(vars=monitor, log=True, datamin=1e-3, datamax=1)
 

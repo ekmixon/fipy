@@ -50,7 +50,7 @@ def execButNoTest(name='__main__'):
     for t in tests:
         exec(t)
 
-_doctestSkippers = list()
+_doctestSkippers = []
 
 def register_skipper(flag, test, why, skipWarning=True):
     """Create a new doctest option flag for skipping tests
@@ -80,12 +80,12 @@ def report_skips():
     """
     global _doctestSkippers
 
-    skips = list()
-    for skipper in _doctestSkippers:
-        if skipper.skipWarning and skipper.skipped:
-            skips.append("Skipped %d doctest examples because %s"
-                         % (len(skipper.skipped), skipper.why))
-    if len(skips) > 0:
+    if skips := [
+        "Skipped %d doctest examples because %s"
+        % (len(skipper.skipped), skipper.why)
+        for skipper in _doctestSkippers
+        if skipper.skipWarning and skipper.skipped
+    ]:
         print("!" * 79, file=sys.stderr)
         print("\n".join(skips), file=sys.stderr)
         print("!" * 79, file=sys.stderr)
@@ -96,7 +96,7 @@ class _DoctestSkipper(object):
         self.why = why
         self.test = test
         self.skipWarning = skipWarning
-        self.skipped = list()
+        self.skipped = []
 
     def skipTest(self):
         if not hasattr(self, "hasFeature"):

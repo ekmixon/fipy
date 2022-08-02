@@ -9,7 +9,7 @@ if solver == 'trilinos':
     docTestModuleNames = ('trilinosMatrix', 'pysparseMatrix')
 elif solver == 'no-pysparse':
     docTestModuleNames = ('trilinosMatrix',)
-elif solver == 'scipy' or solver == 'pyamg':
+elif solver in ['scipy', 'pyamg']:
     docTestModuleNames = ('scipyMatrix',)
 elif solver == 'pysparse':
     docTestModuleNames = ('pysparseMatrix',)
@@ -18,7 +18,7 @@ elif solver == 'pyamgx':
 elif solver == 'petsc':
     docTestModuleNames = ('petscMatrix',)
 else:
-    raise ImportError('Unknown solver package %s' % solver)
+    raise ImportError(f'Unknown solver package {solver}')
 
 def _suite():
     return _LateImportDocTestSuite(docTestModuleNames=docTestModuleNames, base=__name__)

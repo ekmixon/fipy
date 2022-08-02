@@ -24,11 +24,11 @@ class _GridRepresentation(_AbstractRepresentation):
     def _repr(self, dns):
         dnstr = []
         for d, n in dns:
-            dnstr.append(d + "=" + str(self.mesh.args[d]))
+            dnstr.append(f"{d}={str(self.mesh.args[d])}")
             if self.mesh.args[n] is not None:
-                dnstr.append(n + "=" + str(self.mesh.args[n]))
+                dnstr.append(f"{n}={str(self.mesh.args[n])}")
 
-        return "%s(%s)" % (self.mesh.__class__.__name__, ", ".join(dnstr))
+        return f'{self.mesh.__class__.__name__}({", ".join(dnstr)})'
 
     def _test(self):
         """

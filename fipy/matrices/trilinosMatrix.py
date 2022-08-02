@@ -110,11 +110,10 @@ class _TrilinosMatrix(_SparseMatrix):
         s = _SparseMatrix.__str__(self)
 
         comm = self.matrix.Map().Comm()
-        if comm.NumProc() > 1:
-            from fipy.tools import parallelComm
-            return ''.join(parallelComm.allgather(s))
-        else:
+        if comm.NumProc() <= 1:
             return s
+        from fipy.tools import parallelComm
+        return ''.join(parallelComm.allgather(s))
 
     @property
     def _range(self):
@@ -142,7 +141,7 @@ class _TrilinosMatrix(_SparseMatrix):
 
             # Depending on which one is more filled, pick the order of operations
             if self.matrix.Filled() and other.matrix.NumGlobalNonzeros() \
-                                            > self.matrix.NumGlobalNonzeros():
+                                                > self.matrix.NumGlobalNonzeros():
                 tempBandwidth = other.matrix.NumGlobalNonzeros() / self.matrix.NumGlobalRows()+1
 
                 tempMatrix = Epetra.CrsMatrix(Epetra.Copy, self.rowMap, tempBandwidth)
@@ -159,11 +158,10 @@ class _TrilinosMatrix(_SparseMatrix):
 
                 self.matrix = tempMatrix
 
-            else:
-                if EpetraExt.Add(other.matrix, False, 1, self.matrix, 1) != 0:
-                    import warnings
-                    warnings.warn("EpetraExt.Add returned error code in __iadd__",
-                                  UserWarning, stacklevel=2)
+            elif EpetraExt.Add(other.matrix, False, 1, self.matrix, 1) != 0:
+                import warnings
+                warnings.warn("EpetraExt.Add returned error code in __iadd__",
+                              UserWarning, stacklevel=2)
 
         return self
 
@@ -208,18 +206,12 @@ class _TrilinosMatrix(_SparseMatrix):
             AttributeError: 'int' object has no attribute 'fillComplete'
         """
 
-        if other is 0:
-            return self
-        else:
-            return self._add(other)
+        return self if other is 0 else self._add(other)
 
     __radd__ = __add__
 
     def __sub__(self, other):
-        if other is 0:
-            return self
-        else:
-            return self._add(other, sign=-1)
+        return self if other is 0 else self._add(other, sign=-1)
 
     def __mul__(self, other):
         """
@@ -256,19 +248,18 @@ class _TrilinosMatrix(_SparseMatrix):
         N = self.matrix.NumMyCols()
 
         if isinstance(other, _TrilinosMatrix):
-            if isinstance(other.matrix, Epetra.RowMatrix):
-                self.fillComplete()
-                other.fillComplete()
-
-                result = Epetra.CrsMatrix(Epetra.Copy, self.rowMap, 0)
-
-                EpetraExt.Multiply(self.matrix, False, other.matrix, False, result)
-                copy = self.copy()
-                copy.matrix = result
-                return copy
-            else:
+            if not isinstance(other.matrix, Epetra.RowMatrix):
                 raise TypeError
 
+            self.fillComplete()
+            other.fillComplete()
+
+            result = Epetra.CrsMatrix(Epetra.Copy, self.rowMap, 0)
+
+            EpetraExt.Multiply(self.matrix, False, other.matrix, False, result)
+            copy = self.copy()
+            copy.matrix = result
+            return copy
         else:
             shape = numerix.shape(other)
             if shape == ():
@@ -286,15 +277,14 @@ class _TrilinosMatrix(_SparseMatrix):
                 raise TypeError
 
     def __rmul__(self, other):
-        if isinstance(numerix.ones(1, 'l'), type(other)):
-            self.fillComplete()
-
-            y = Epetra.Vector(self.rangeMap, other)
-            result = Epetra.Vector(self.domainMap)
-            self.matrix.Multiply(True, y, result)
-            return numerix.array(result)
-        else:
+        if not isinstance(numerix.ones(1, 'l'), type(other)):
             return self * other
+        self.fillComplete()
+
+        y = Epetra.Vector(self.rangeMap, other)
+        result = Epetra.Vector(self.domainMap)
+        self.matrix.Multiply(True, y, result)
+        return numerix.array(result)
 
     @property
     def _shape(self):
@@ -337,19 +327,15 @@ class _TrilinosMatrix(_SparseMatrix):
                 # this function in such a way as would generate these errors,
                 # I have not implemented the change.
 
+        elif self.matrix.NumGlobalNonzeros() == 0:
+            self.matrix.InsertGlobalValues(id1, id2, vector)
         else:
-
-            # This guarantees that it will actually replace the values that are there,
-            # if there are any
-            if self.matrix.NumGlobalNonzeros() == 0:
-                self.matrix.InsertGlobalValues(id1, id2, vector)
-            else:
-                self.matrix.InsertGlobalValues(id1, id2, numerix.zeros(len(vector), 'l'))
-                self.fillComplete()
-                if self.matrix.ReplaceGlobalValues(id1, id2, vector) != 0:
-                    import warnings
-                    warnings.warn("ReplaceGlobalValues returned error code in put",
-                                  UserWarning, stacklevel=2)
+            self.matrix.InsertGlobalValues(id1, id2, numerix.zeros(len(vector), 'l'))
+            self.fillComplete()
+            if self.matrix.ReplaceGlobalValues(id1, id2, vector) != 0:
+                import warnings
+                warnings.warn("ReplaceGlobalValues returned error code in put",
+                              UserWarning, stacklevel=2)
                     # Possible different algorithm, to guarantee that it does not fail:
                     #
                     # Make a new matrix,
@@ -432,12 +418,11 @@ class _TrilinosMatrix(_SparseMatrix):
             err = self.matrix.InsertGlobalValues(id1, id2, vector)
             if err < 0:
                 raise RuntimeError("Processor %d, error code %d" \
-                  % (self.comm.MyPID(), err))
-        else:
-            if self.matrix.SumIntoGlobalValues(id1, id2, vector) != 0:
-                import warnings
-                warnings.warn("Summing into unfilled matrix returned error code",
-                              UserWarning, stacklevel=2)
+                      % (self.comm.MyPID(), err))
+        elif self.matrix.SumIntoGlobalValues(id1, id2, vector) != 0:
+            import warnings
+            warnings.warn("Summing into unfilled matrix returned error code",
+                          UserWarning, stacklevel=2)
                 # Possible change to this part of the code to do the following:
                 #
                 # Make a new matrix,
@@ -510,21 +495,19 @@ class _TrilinosMatrix(_SparseMatrix):
         """
         if self.comm.NumProc() == 1:
             return self.matrix
-            # No redistribution necessary in serial mode
-        else:
 ##            self._matrix.GlobalAssemble()
-            totalElements = self.matrix.NumGlobalRows()
+        totalElements = self.matrix.NumGlobalRows()
 
-            # Epetra.Map(numGlobalElements, indexBase, comm)
-            # implicit number of elements per processor
-            DistributedMap = Epetra.Map(totalElements, 0, self.comm)
-            RootToDist = Epetra.Import(DistributedMap, self.rangeMap)
+        # Epetra.Map(numGlobalElements, indexBase, comm)
+        # implicit number of elements per processor
+        DistributedMap = Epetra.Map(totalElements, 0, self.comm)
+        RootToDist = Epetra.Import(DistributedMap, self.rangeMap)
 
-            DistMatrix = Epetra.CrsMatrix(Epetra.Copy, DistributedMap, (self.bandwidth*3) // 2)
+        DistMatrix = Epetra.CrsMatrix(Epetra.Copy, DistributedMap, (self.bandwidth*3) // 2)
 
-            DistMatrix.Import(self.matrix, RootToDist, Epetra.Insert)
+        DistMatrix.Import(self.matrix, RootToDist, Epetra.Insert)
 
-            return DistMatrix
+        return DistMatrix
 
     def fillComplete(self):
         if not self.matrix.Filled():
@@ -1108,44 +1091,37 @@ class _TrilinosMeshMatrix(_TrilinosRowMeshMatrix):
 
         if isinstance(other, _TrilinosMatrix):
             return super(_TrilinosMeshMatrix, self).__mul__(other=other)
+        shape = numerix.shape(other)
+
+
+        if shape == ():
+            result = self.copy()
+            result.matrix.Scale(other)
+            return result
         else:
-            shape = numerix.shape(other)
 
+            other_map = other.Map() if isinstance(other, Epetra.Vector) else self.colMap
+            if other_map.SameAs(self.colMap):
+                localNonOverlappingColIDs = self._m2m.localNonOverlappingColIDs
 
-            if shape == ():
-                result = self.copy()
-                result.matrix.Scale(other)
-                return result
-            else:
+                other = Epetra.Vector(self.domainMap,
+                                      other[localNonOverlappingColIDs])
 
-                if isinstance(other, Epetra.Vector):
-                    other_map = other.Map()
-                else:
-                    other_map = self.colMap
+            if not other.Map().SameAs(self.matrix.DomainMap()):
+                raise TypeError("%s: %s != (%d,)" % (self.__class__, str(shape), N))
+            nonoverlapping_result = Epetra.Vector(self.rangeMap)
+            self.matrix.Multiply(False, other, nonoverlapping_result)
 
-                if other_map.SameAs(self.colMap):
-                    localNonOverlappingColIDs = self._m2m.localNonOverlappingColIDs
+            if not other_map.SameAs(self.colMap):
+                return nonoverlapping_result
 
-                    other = Epetra.Vector(self.domainMap,
-                                          other[localNonOverlappingColIDs])
+            overlapping_result = Epetra.Vector(self.colMap)
+            overlapping_result.Import(nonoverlapping_result,
+                                      Epetra.Import(self.colMap,
+                                                    self.domainMap),
+                                      Epetra.Insert)
 
-                if other.Map().SameAs(self.matrix.DomainMap()):
-                    nonoverlapping_result = Epetra.Vector(self.rangeMap)
-                    self.matrix.Multiply(False, other, nonoverlapping_result)
-
-                    if other_map.SameAs(self.colMap):
-                        overlapping_result = Epetra.Vector(self.colMap)
-                        overlapping_result.Import(nonoverlapping_result,
-                                                  Epetra.Import(self.colMap,
-                                                                self.domainMap),
-                                                  Epetra.Insert)
-
-                        return overlapping_result
-                    else:
-                        return nonoverlapping_result
-
-                else:
-                    raise TypeError("%s: %s != (%d,)" % (self.__class__, str(shape), N))
+            return overlapping_result
 
 class _TrilinosIdentityMatrix(_TrilinosMatrixFromShape):
     """

@@ -55,8 +55,8 @@ class _Vertex(object):
 class _Line(object):
     def __init__(self, seedVertex):
         if seedVertex.getUp() is not None or \
-           seedVertex.getDown() is not None or \
-           seedVertex.getInLine():
+               seedVertex.getDown() is not None or \
+               seedVertex.getInLine():
             raise ValueError('bad seedVertex')
 
         setVs = []
@@ -64,13 +64,15 @@ class _Line(object):
         vertex = seedVertex
         while vertex is not None and vertex.getUp() is None:
             for v in vertex.getCloseVertices():
-                if v not in setVs:
-                    if vertex in v.getCloseVertices():
-                        if v.getDown() is None:
-                            if vertex.getUp() is None:
-                                if vertex.getDown() is not v:
-                                    vertex.setUp(v)
-                                    v.setDown(vertex)
+                if (
+                    v not in setVs
+                    and vertex in v.getCloseVertices()
+                    and v.getDown() is None
+                    and vertex.getUp() is None
+                    and vertex.getDown() is not v
+                ):
+                    vertex.setUp(v)
+                    v.setDown(vertex)
 
             setVs.append(vertex)
             vertex = vertex.getUp()
@@ -81,13 +83,15 @@ class _Line(object):
         vertex = seedVertex
         while vertex is not None and vertex.getDown() is None:
             for v in vertex.getCloseVertices():
-                if v not in setVs:
-                    if vertex in v.getCloseVertices():
-                        if v.getUp() is None:
-                            if vertex.getDown() is None:
-                                if vertex.getUp() is not v:
-                                    vertex.setDown(v)
-                                    v.setUp(vertex)
+                if (
+                    v not in setVs
+                    and vertex in v.getCloseVertices()
+                    and v.getUp() is None
+                    and vertex.getDown() is None
+                    and vertex.getUp() is not v
+                ):
+                    vertex.setDown(v)
+                    v.setUp(vertex)
 
             self.startVertex = vertex
             setVs.append(vertex)
@@ -96,8 +100,7 @@ class _Line(object):
         self.startVertex.setInLineTrue()
 
     def getVertexListIDs(self):
-        vertexListIDs = []
-        vertexListIDs.append(self.startVertex.getID())
+        vertexListIDs = [self.startVertex.getID()]
         v = self.startVertex.getUp()
         while v is not None and v is not self.startVertex:
             vertexListIDs.append(v.getID())
@@ -161,13 +164,11 @@ def _getOrderedLines(IDs, coordinates, thresholdDistance = 0.0):
 
         vertices[ID].setCloseVertices(closeVertices)
 
-    listOfVertexLists = []
-
-    for vertex in vertices:
-        if not vertex.getInLine():
-            listOfVertexLists.append(_Line(vertex).getVertexListIDs())
-
-    return listOfVertexLists
+    return [
+        _Line(vertex).getVertexListIDs()
+        for vertex in vertices
+        if not vertex.getInLine()
+    ]
 
 def _test():
     import fipy.tests.doctestPlus

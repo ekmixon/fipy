@@ -27,17 +27,8 @@ class _TestProgram(unittest.TestProgram):
             if len(args) == 0 and self.defaultTest is None:
                 self.test = self.testLoader.loadTestsFromModule(self.module)
                 return
-            if len(args) > 0:
-                self.testNames = args
-            else:
-                self.testNames = (self.defaultTest,)
+            self.testNames = args if len(args) > 0 else (self.defaultTest, )
             self.createTests()
-##            print argv
-##            raw_input()
-##          if inline:
-##              argv[1:] = ['--inline']
-##            if numMesh:
-##                argv[1:] = ['--numMesh']
         except getopt.error as msg:
             self.usageExit(msg)
 

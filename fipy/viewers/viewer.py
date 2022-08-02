@@ -34,18 +34,14 @@ class AbstractViewer(object):
         self.limits = kwlimits
 
         if title is None:
-            if len(self.vars) == 1:
-                title = self.vars[0].name
-            else:
-                title = ''
-
+            title = self.vars[0].name if len(self.vars) == 1 else ''
         self.title = title
 
     def _getSuitableVars(self, vars):
         if type(vars) not in [type([]), type(())]:
             vars = [vars]
 
-        return [var for var in vars]
+        return list(vars)
 
     def setLimits(self, limits={}, **kwlimits):
         """
@@ -79,7 +75,7 @@ class AbstractViewer(object):
         float or None
             the value of the limit
         """
-        if not (isinstance(keys, list) or isinstance(keys, tuple)):
+        if not isinstance(keys, (list, tuple)):
             keys = (keys,)
         limit = default
         for key in keys:
@@ -167,17 +163,23 @@ class AbstractViewer(object):
         # state; In particular, it may have a special `raw_input` to prevent user
         # interaction during the test.
 
-        opinion = self._doctest_raw_input(self.__class__.__name__ + ": " + prompt).strip()
+        opinion = self._doctest_raw_input(
+            f"{self.__class__.__name__}: {prompt}"
+        ).strip()
+
         if len(opinion) > 0:
             extensions = ", ".join(self._validFileExtensions())
-            if len(extensions) > 0:
-                extensions = " (%s)" % extensions
-            snapshot = self._doctest_raw_input("Enter a filename%s to save a snapshot (leave blank to skip): " % extensions).strip()
+            if extensions != "":
+                extensions = f" ({extensions})"
+            snapshot = self._doctest_raw_input(
+                f"Enter a filename{extensions} to save a snapshot (leave blank to skip): "
+            ).strip()
+
             self.plot(snapshot)
             print(opinion)
 
 
-    def _test1D(**kwargs):
+    def _test1D(self):
         s = """
             >>> from fipy import *
             >>> mesh = Grid1D(nx=100)
@@ -193,11 +195,11 @@ class AbstractViewer(object):
             ...     viewer.plot()
             >>> viewer._promptForOpinion()
         """
-        s = s.replace("VIEWERSUBSTITUTION", kwargs["viewer"])
+        s = s.replace("VIEWERSUBSTITUTION", self["viewer"])
         return s
     _test1D = staticmethod(_test1D)
 
-    def _test2Dbase(**kwargs):
+    def _test2Dbase(self):
         s = """
             >>> from fipy import *
             >>> mesh = MESHSUBSTITUTION
@@ -214,24 +216,28 @@ class AbstractViewer(object):
             ...     viewer.plot()
             >>> viewer._promptForOpinion()
         """
-        s = s.replace("VIEWERSUBSTITUTION", kwargs["viewer"])
-        s = s.replace("MESHSUBSTITUTION", kwargs["mesh"])
+        s = s.replace("VIEWERSUBSTITUTION", self["viewer"])
+        s = s.replace("MESHSUBSTITUTION", self["mesh"])
         return s
     _test2Dbase = staticmethod(_test2Dbase)
 
-    def _test2D(**kwargs):
-        return AbstractViewer._test2Dbase(mesh="Grid2D(nx=50, ny=100, dx=0.1, dy=0.01)",
-                                      **kwargs)
+    def _test2D(self):
+        return AbstractViewer._test2Dbase(
+            mesh="Grid2D(nx=50, ny=100, dx=0.1, dy=0.01)", **self
+        )
     _test2D = staticmethod(_test2D)
 
-    def _test2Dirregular(**kwargs):
+    def _test2Dirregular(self):
         """"""
-        return AbstractViewer._test2Dbase(mesh="""(Grid2D(nx=5, ny=10, dx=0.1, dy=0.1)
+        return AbstractViewer._test2Dbase(
+            mesh="""(Grid2D(nx=5, ny=10, dx=0.1, dy=0.1)
             ...         + (Tri2D(nx=5, ny=5, dx=0.1, dy=0.1)
-            ...          + ((0.5,), (0.2,))))""", **kwargs)
+            ...          + ((0.5,), (0.2,))))""",
+            **self
+        )
     _test2Dirregular = staticmethod(_test2Dirregular)
 
-    def _test2DvectorBase(**kwargs):
+    def _test2DvectorBase(self):
         s = """
             >>> from fipy import *
             >>> mesh = MESHSUBSTITUTION
@@ -252,26 +258,30 @@ class AbstractViewer(object):
             ...     viewer.plot()
             >>> viewer._promptForOpinion()
         """
-        s = s.replace("VIEWERSUBSTITUTION", kwargs["viewer"])
-        s = s.replace("MESHSUBSTITUTION", kwargs["mesh"])
+        s = s.replace("VIEWERSUBSTITUTION", self["viewer"])
+        s = s.replace("MESHSUBSTITUTION", self["mesh"])
         return s
 
     _test2DvectorBase = staticmethod(_test2DvectorBase)
 
-    def _test2Dvector(**kwargs):
-        return AbstractViewer._test2DvectorBase(mesh="Grid2D(nx=50, ny=100, dx=0.1, dy=0.01)",
-                                            **kwargs)
+    def _test2Dvector(self):
+        return AbstractViewer._test2DvectorBase(
+            mesh="Grid2D(nx=50, ny=100, dx=0.1, dy=0.01)", **self
+        )
     _test2Dvector = staticmethod(_test2Dvector)
 
-    def _test2DvectorIrregular(**kwargs):
+    def _test2DvectorIrregular(self):
         """"""
-        return AbstractViewer._test2DvectorBase(mesh="""(Grid2D(nx=5, ny=10, dx=0.1, dy=0.1)
+        return AbstractViewer._test2DvectorBase(
+            mesh="""(Grid2D(nx=5, ny=10, dx=0.1, dy=0.1)
             ...         + (Tri2D(nx=5, ny=5, dx=0.1, dy=0.1)
-            ...          + ((0.5,), (0.2,))))""", **kwargs)
+            ...          + ((0.5,), (0.2,))))""",
+            **self
+        )
     _test2DvectorIrregular = staticmethod(_test2DvectorIrregular)
 
 
-    def _test3D(**kwargs):
+    def _test3D(self):
         s = """
             >>> from fipy import *
             >>> mesh = Grid3D(nx=50, ny=100, nz=10, dx=0.1, dy=0.01, dz=0.1)
@@ -288,7 +298,7 @@ class AbstractViewer(object):
             ...     viewer.plot()
             >>> viewer._promptForOpinion()
         """
-        s = s.replace("VIEWERSUBSTITUTION", kwargs["viewer"])
+        s = s.replace("VIEWERSUBSTITUTION", self["viewer"])
         return s
 
     _test3D = staticmethod(_test3D)

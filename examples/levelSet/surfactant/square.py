@@ -18,6 +18,7 @@ Advect the interface and check the position.
 
 
 """
+
 from __future__ import print_function
 from __future__ import division
 from __future__ import unicode_literals
@@ -78,7 +79,7 @@ if __name__ == '__main__':
 
     distanceVariable.calcDistanceFunction()
 
-    for step in range(steps):
+    for _ in range(steps):
         print(numerix.sum(surfactantVariable))
         distanceVariable.updateOld()
         surfactantEquation.solve(surfactantVariable, dt=1)

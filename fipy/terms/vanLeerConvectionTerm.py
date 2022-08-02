@@ -18,13 +18,11 @@ class VanLeerConvectionTerm(ExplicitUpwindConvectionTerm):
         min3 = numerix.minimum(numerix.minimum(abs(2 * gradUpwind),
                                                abs(2 * gradUpUpwind)), avg)
 
-        grad = numerix.where(gradUpwind * gradUpUpwind < 0.,
-                             0.,
-                             numerix.where(gradUpUpwind > 0.,
-                                           min3,
-                                           -min3))
-
-        return grad
+        return numerix.where(
+            gradUpwind * gradUpUpwind < 0.0,
+            0.0,
+            numerix.where(gradUpUpwind > 0.0, min3, -min3),
+        )
 
     def _getOldAdjacentValues(self, oldArray, id1, id2, dt):
         oldArray1, oldArray2 = ExplicitUpwindConvectionTerm._getOldAdjacentValues(self, oldArray, id1, id2, dt)

@@ -95,11 +95,13 @@ def Viewer(vars, title=None, limits={}, FIPY_VIEWER=None, **kwlimits):
     if len(emptyvars):
         viewers.append(DummyViewer(vars=emptyvars))
 
-    enpts = []
     import pkg_resources
-    for ep in pkg_resources.iter_entry_points(group='fipy.viewers',
-                                              name=FIPY_VIEWER):
-        enpts.append((ep.name, ep))
+    enpts = [
+        (ep.name, ep)
+        for ep in pkg_resources.iter_entry_points(
+            group='fipy.viewers', name=FIPY_VIEWER
+        )
+    ]
 
     for name, ep in sorted(enpts):
 
@@ -108,7 +110,7 @@ def Viewer(vars, title=None, limits={}, FIPY_VIEWER=None, **kwlimits):
         try:
             ViewerClass = ep.load()
 
-            while len(vars) > 0:
+            while vars:
                 viewer = ViewerClass(vars=vars, title=title, limits=limits, **kwlimits)
 
                 for var in viewer.vars:
@@ -118,21 +120,18 @@ def Viewer(vars, title=None, limits={}, FIPY_VIEWER=None, **kwlimits):
 
             break
         except Exception as s:
-            errors.append("%s: %s" % (name, s))
+            errors.append(f"{name}: {s}")
 
-    if len(attempts) == 0:
-        if FIPY_VIEWER is not None:
-            raise ImportError("`%s` viewer not found" % FIPY_VIEWER)
-        else:
+    if not attempts:
+        if FIPY_VIEWER is None:
             raise ImportError("No viewers found. Run `python setup.py egg_info` or similar.")
 
-    if len(vars) > 0:
-        raise ImportError("Failed to import a viewer: %s" % str(errors))
+        else:
+            raise ImportError(f"`{FIPY_VIEWER}` viewer not found")
+    if vars:
+        raise ImportError(f"Failed to import a viewer: {errors}")
 
-    if len(viewers) > 1:
-        return MultiViewer(viewers = viewers)
-    else:
-        return viewers[0]
+    return MultiViewer(viewers = viewers) if len(viewers) > 1 else viewers[0]
 
 __all__.extend(["MeshDimensionError", "DummyViewer", "Viewer"])
 from future.utils import text_to_native_str

@@ -64,12 +64,11 @@ if parallelComm.Nproc > 1:
     def mpi_input(prompt=""):
         parallelComm.Barrier()
         sys.stdout.flush()
-        if parallelComm.procID == 0:
-            sys.stdout.write(prompt)
-            sys.stdout.flush()
-            return sys.stdin.readline()
-        else:
+        if parallelComm.procID != 0:
             return ""
+        sys.stdout.write(prompt)
+        sys.stdout.flush()
+        return sys.stdin.readline()
     input = mpi_input
 
 __all__.extend(['input', 'input_original'])
@@ -96,10 +95,7 @@ def doctest_raw_input(prompt):
         from fipy.tools import parallelComm
         parallelComm.Barrier()
         _saved_stdout.flush()
-        if parallelComm.procID == 0:
-            txt = _serial_doctest_raw_input(prompt)
-        else:
-            txt = ""
+        txt = _serial_doctest_raw_input(prompt) if parallelComm.procID == 0 else ""
         parallelComm.Barrier()
     except ImportError:
         txt = _serial_doctest_raw_input(prompt)
@@ -135,10 +131,15 @@ def test(*args):
     tmpDir = tempfile.mkdtemp()
 
     try:
-        setup(name='FiPy',
-              script_args = ['egg_info', '--egg-base=' + tmpDir,
-                             'test', '--modules'] + list(args),
-              cmdclass={'test': test})
+        setup(
+            name='FiPy',
+            script_args=(
+                ['egg_info', f'--egg-base={tmpDir}', 'test', '--modules']
+                + list(args)
+            ),
+            cmdclass={'test': test},
+        )
+
     except SystemExit as exitErr:
         import shutil
         shutil.rmtree(tmpDir)

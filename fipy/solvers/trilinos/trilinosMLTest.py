@@ -58,12 +58,12 @@ class TrilinosMLTest(TrilinosSolver):
             self.MLOptions["test: tolerance"] = tolerance
 
 
-        unsupportedSmoothers = ["Jacobi", "Gauss-Seidel", "block Gauss-Seidel", "ParaSails", "IFPACK", "ML"]
-
         if not testUnsupported:
+            unsupportedSmoothers = ["Jacobi", "Gauss-Seidel", "block Gauss-Seidel", "ParaSails", "IFPACK", "ML"]
+
             for smoother in unsupportedSmoothers:
-                if ("test: " + smoother) not in self.MLOptions:
-                    self.MLOptions["test: " + smoother] = False
+                if f"test: {smoother}" not in self.MLOptions:
+                    self.MLOptions[f"test: {smoother}"] = False
 
 
 

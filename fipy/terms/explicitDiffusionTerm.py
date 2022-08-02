@@ -23,11 +23,7 @@ class ExplicitDiffusionTerm(_AbstractDiffusionTerm):
     """
 
     def _buildMatrix(self, var, SparseMatrix, boundaryConditions = (), dt=None, transientGeomCoeff=None, diffusionGeomCoeff=None):
-        if hasattr(var, 'old'):
-            varOld = var.old
-        else:
-            varOld = var
-
+        varOld = var.old if hasattr(var, 'old') else var
         varOld, L, b = _AbstractDiffusionTerm._buildMatrix(self, varOld, SparseMatrix, boundaryConditions = boundaryConditions, dt = dt,
                                                   transientGeomCoeff=transientGeomCoeff, diffusionGeomCoeff=diffusionGeomCoeff)
 

@@ -50,9 +50,8 @@ class CellTerm(_NonDiffusionTerm):
             else:
                 shape = self.coeff.shape
 
-        if var.rank == 0:
-            if shape != ():
-                raise TypeError("The coefficient must be rank 0 for a rank 0 solution variable.")
+        if var.rank == 0 and shape != ():
+            raise TypeError("The coefficient must be rank 0 for a rank 0 solution variable.")
 
         if shape != () and len(shape) != 2 and shape[0] != shape[1]:
             raise TypeError("The coefficient must be a rank-0 or rank-2 vector or a scalar value.")
@@ -68,11 +67,7 @@ class CellTerm(_NonDiffusionTerm):
     def _calcCoeffVectors_(self, var, transientGeomCoeff=None, diffusionGeomCoeff=None):
         coeff = self._getGeomCoeff(var)
         weight = self._getWeight(var, transientGeomCoeff, diffusionGeomCoeff)
-        if hasattr(coeff, 'old'):
-            old = coeff.old
-        else:
-            old = coeff
-
+        old = coeff.old if hasattr(coeff, 'old') else coeff
         self.coeffVectors = {
             'diagonal': coeff * weight['diagonal'],
             'old value': old * weight['old value'],

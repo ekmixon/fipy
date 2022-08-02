@@ -30,7 +30,7 @@ class BoundaryCondition(object):
             raise NotImplementedError("can't instantiate abstract base class")
 
         self.faces = faces
-        if not (isinstance(value, PhysicalField) or isinstance(value, Variable)):
+        if not isinstance(value, (PhysicalField, Variable)):
             value = PhysicalField(value)
         self.value = value
 
@@ -67,13 +67,10 @@ class BoundaryCondition(object):
         """Return a tuple of the boundary conditions to apply
         to the term and to the derivative of the term
         """
-        if order == 0:
-            return self
-        else:
-            return None
+        return self if order == 0 else None
 
     def __repr__(self):
-        return "%s(faces = %s, value = %s)" % (self.__class__.__name__, repr(self.faces), repr(self.value))
+        return f"{self.__class__.__name__}(faces = {repr(self.faces)}, value = {repr(self.value)})"
 
     def _resetBoundaryConditionApplied(self):
         self.boundaryConditionApplied = False

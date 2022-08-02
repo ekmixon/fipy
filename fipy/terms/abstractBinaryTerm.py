@@ -18,18 +18,16 @@ class _AbstractBinaryTerm(Term):
         self.term = term
         self.other = other
 
-        if term.var is None:
-            if other.var is None:
-                pass
-            else:
-                raise ExplicitVariableError
-        else:
-            if other.var is None:
-                if isinstance(other, _ExplicitSourceTerm):
-                    other.var = term.var
-                else:
-                    raise ExplicitVariableError
-
+        if term.var is None and other.var is None:
+            pass
+        elif (
+            term.var is None
+            or other.var is None
+            and not isinstance(other, _ExplicitSourceTerm)
+        ):
+            raise ExplicitVariableError
+        elif other.var is None:
+            other.var = term.var
         Term.__init__(self, var=self._vars[0])
 
     def _addNone(self, arg0, arg1):

@@ -99,11 +99,7 @@ class _UniformGrid1DBuilder(_Grid1DBuilder):
         self.origin = _UniformOrigin.calcOrigin(origin,
                                                 self.offset, self.ds, self.scale)
 
-        if 0 in self.ns:
-            self.numberOfFaces = 0
-        else:
-            self.numberOfFaces = self.ns[0] + 1
-
+        self.numberOfFaces = 0 if 0 in self.ns else self.ns[0] + 1
         self.numberOfCells = self.ns[0]
 
     @property

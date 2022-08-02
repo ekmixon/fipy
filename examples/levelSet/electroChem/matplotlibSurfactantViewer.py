@@ -87,7 +87,7 @@ class MatplotlibSurfactantViewer(AbstractMatplotlibViewer):
             (default) value of `None` will autoscale.
         """
 
-        kwlimits.update(limits)
+        kwlimits |= limits
         AbstractMatplotlibViewer.__init__(self, vars=[], title=title, **kwlimits)
 
         self.distanceVar = distanceVar
@@ -132,13 +132,11 @@ class MatplotlibSurfactantViewer(AbstractMatplotlibViewer):
         colors = pylab.cm.jet(( self.surfactantVar[IDs] - zmin) / (zmax - zmin))
         segments = list(zip(verts[:-1], verts[1:]))
         LC = matplotlib.collections.LineCollection(segments, colors=colors)
-
 #         CS.ax.add_collection(LC)
 
         verts = numerix.array((-verts[..., 0], verts[..., 1])).swapaxes(0, 1)
         segments = list(zip(verts[:-1], verts[1:]))
         LC = matplotlib.collections.LineCollection(segments, colors=colors)
-
 #         CS.ax.add_collection(LC)
 
         CS.ax.set_xlim((-maxX, maxX))

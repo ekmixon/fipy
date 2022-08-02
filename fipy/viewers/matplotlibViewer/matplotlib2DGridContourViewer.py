@@ -47,7 +47,7 @@ class Matplotlib2DGridContourViewer(AbstractMatplotlib2DViewer):
             ratio. If `auto`, the aspect ratio will be determined from
             the *vars*'s mesh.
         """
-        kwlimits.update(limits)
+        kwlimits |= limits
         AbstractMatplotlib2DViewer.__init__(self, vars=vars, title=title,
                                             cmap=cmap, colorbar=colorbar, axes=axes, figaspect=figaspect,
                                             **kwlimits)
@@ -58,11 +58,14 @@ class Matplotlib2DGridContourViewer(AbstractMatplotlib2DViewer):
         from fipy.meshes.nonUniformGrid2D import NonUniformGrid2D
         from fipy.meshes.uniformGrid2D import UniformGrid2D
         from fipy.variables.cellVariable import CellVariable
-        vars = [var for var in AbstractMatplotlib2DViewer._getSuitableVars(self, vars) \
-          if ((isinstance(var.mesh, NonUniformGrid2D)
-               or isinstance(var.mesh, UniformGrid2D))
-              and isinstance(var, CellVariable))]
-        if len(vars) == 0:
+        vars = [
+            var
+            for var in AbstractMatplotlib2DViewer._getSuitableVars(self, vars)
+            if isinstance(var.mesh, (NonUniformGrid2D, UniformGrid2D))
+            and isinstance(var, CellVariable)
+        ]
+
+        if not vars:
             from fipy.viewers import MeshDimensionError
             raise MeshDimensionError("The mesh must be a Grid2D instance")
         # this viewer can only display one variable
@@ -70,9 +73,7 @@ class Matplotlib2DGridContourViewer(AbstractMatplotlib2DViewer):
 
     def _plot(self):
         super(Matplotlib2DGridContourViewer, self)._plot()
-
 ##         plt.clf()
-
 ##         ## Added garbage collection since matplotlib objects seem to hang
 ##         ## around and accumulate.
 ##         import gc

@@ -345,12 +345,12 @@ intersphinx_mapping = {
 
 def skip_numpy_not_numerix(app, what, name, obj, skip, options):
     import types
-    if ((type(obj) in [types.FunctionType,
-                       types.BuiltinFunctionType,
-                       type])
-        and not (obj.__module__.startswith("fipy")
-                 or obj.__module__.startswith("package"))):
-            skip = True
+    if (
+        type(obj) in [types.FunctionType, types.BuiltinFunctionType, type]
+        and not obj.__module__.startswith("fipy")
+        and not obj.__module__.startswith("package")
+    ):
+        skip = True
     return skip
 
 def setup(app):

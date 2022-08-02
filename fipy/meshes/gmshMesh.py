@@ -48,9 +48,8 @@ register_skipper(flag="GMSH",
                  why="`gmsh` cannot be found on the $PATH")
 
 def parprint(str):
-    if DEBUG:
-        if parallelComm.procID == 0:
-            print(str, file=sys.stderr)
+    if DEBUG and parallelComm.procID == 0:
+        print(str, file=sys.stderr)
 
 class GmshException(Exception):
     pass
@@ -155,11 +154,8 @@ def openMSHFile(name, dimensions=None, coordDimensions=None, communicator=parall
             communicator.Barrier()
             geoFile = communicator.bcast(geoFile)
         else:
-            # Gmsh isn't picky about file extensions,
-            # so we peek at the start of the file to deduce the type
-            f = open(name, 'r')
-            filetype = f.readline().strip()
-            f.close()
+            with open(name, 'r') as f:
+                filetype = f.readline().strip()
             if filetype == "$MeshFormat":
                 geoFile = None
                 mshFile = name
@@ -237,7 +233,7 @@ def openMSHFile(name, dimensions=None, coordDimensions=None, communicator=parall
 
                 gmshOutput = gmshOutput.decode('ascii')
 
-                parprint("gmsh out: %s" % gmshOutput)
+                parprint(f"gmsh out: {gmshOutput}")
             else:
                 mshFile = None
                 gmshOutput = ""
@@ -338,7 +334,7 @@ class POSFile(GmshFile):
         from fipy.variables.cellVariable import CellVariable
 
         if not isinstance(obj, CellVariable):
-            raise TypeError("Unable to write %s to a POS file" % type(obj))
+            raise TypeError(f"Unable to write {type(obj)} to a POS file")
 
         coords = obj.mesh.vertexCoords
         dimensions, numNodes = coords.shape
@@ -565,7 +561,7 @@ class MSHFile(GmshFile):
         # extract the actual data within section
         while True:
             line = self.fileobj.readline()
-            if ("$End%s" % title) not in line:
+            if f"$End{title}" not in line:
                 newF.write(line)
             else: break
 
@@ -582,8 +578,7 @@ class MSHFile(GmshFile):
             line = self.fileobj.readline()
             if len(line) == 0:
                 raise EOFError("No `%s' header found!" % title)
-                break
-            elif (("$%s" % title) not in line):
+            elif f"${title}" not in line:
                 continue
             else:
                 break # found header
@@ -595,7 +590,7 @@ class MSHFile(GmshFile):
         """
 
         allShapes  = nx.unique(shapeTypes).tolist()
-        maxFaces   = max([self.numFacesPerCell[x] for x in allShapes])
+        maxFaces = max(self.numFacesPerCell[x] for x in allShapes)
 
         # `cellsToFaces` must be padded with -1; see mesh.py
         currNumFaces = 0
@@ -657,7 +652,7 @@ class MSHFile(GmshFile):
                     currNumFaces += 1
 
         # pad short faces with -1
-        maxFaceLen = max([len(f) for f in uniqueFaces])
+        maxFaceLen = max(len(f) for f in uniqueFaces)
         uniqueFaces = [[-1] * (maxFaceLen - len(f)) + f for f in uniqueFaces]
 
         facesToVertices = nx.array(uniqueFaces, dtype=nx.INT_DTYPE)
@@ -731,22 +726,20 @@ class MSHFile(GmshFile):
 
         try:
             if self.dimensions is None:
-                nodesFile = open(self.nodesPath, 'r')
-                nodesFile.readline() # skip number of nodes
+                with open(self.nodesPath, 'r') as nodesFile:
+                    nodesFile.readline() # skip number of nodes
 
-                # We assume we have a 2D file unless we find a node
-                # with a non-zero Z coordinate
-                self.dimensions = 2
-                for node in nodesFile:
-                    line   = node.split()
+                    # We assume we have a 2D file unless we find a node
+                    # with a non-zero Z coordinate
+                    self.dimensions = 2
+                    for node in nodesFile:
+                        line   = node.split()
 
-                    newVert = [float(x) for x in line]
+                        newVert = [float(x) for x in line]
 
-                    if newVert[2] != 0.0:
-                        self.dimensions = 3
-                        break
-
-                nodesFile.close()
+                        if newVert[2] != 0.0:
+                            self.dimensions = 3
+                            break
 
             self.coordDimensions = self.coordDimensions or self.dimensions
 
@@ -829,20 +822,21 @@ class MSHFile(GmshFile):
                                                     allShapeTypes,
                                                     numCellsTotal)
 
-            # cell entities were easy to record on parsing
-            # but we don't use Gmsh faces, so we need to correlate the nodes
-            # that make up the Gmsh faces with the vertex IDs of the FiPy faces
-            # so that we can check if any are named
-            faceEntitiesDict = dict()
-
             # translate Gmsh IDs to `vertexCoord` indices
             facesToVertIDs = self._translateNodesToVertices(facesData.nodes,
                                                             vertIDtoIdx)
 
-            for face, physicalEntity, geometricalEntity in zip(facesToVertIDs,
-                                                               facesData.physicalEntities,
-                                                               facesData.geometricalEntities):
-                faceEntitiesDict[' '.join([str(x) for x in sorted(face)])] = (physicalEntity, geometricalEntity)
+            faceEntitiesDict = {
+                ' '.join([str(x) for x in sorted(face)]): (
+                    physicalEntity,
+                    geometricalEntity,
+                )
+                for face, physicalEntity, geometricalEntity in zip(
+                    facesToVertIDs,
+                    facesData.physicalEntities,
+                    facesData.geometricalEntities,
+                )
+            }
 
             self.physicalFaceMap = nx.zeros(facesToV.shape[-1:], 'l')
             self.geometricalFaceMap = nx.zeros(facesToV.shape[-1:], 'l')
@@ -861,7 +855,7 @@ class MSHFile(GmshFile):
                 os.unlink(self.namesPath)
 
         # convert lists of cell vertices to a properly oriented masked array
-        maxVerts = max([len(v) for v in cellsToVertIDs])
+        maxVerts = max(len(v) for v in cellsToVertIDs)
         # ticket:539 - NumPy 1.7 casts to array before concatenation and empty array defaults to float
         cellsToVertIDs = [nx.concatenate((v, nx.array([-1] * (maxVerts-len(v)), dtype=nx.INT_DTYPE))) for v in cellsToVertIDs]
         cellsToVertIDs = nx.MA.masked_equal(cellsToVertIDs, value=-1).swapaxes(0, 1)
@@ -884,7 +878,7 @@ class MSHFile(GmshFile):
         elif isinstance(obj, CellVariable):
             mesh = obj.mesh
         else:
-            raise TypeError("Unable to write %s to a MSH file" % type(obj))
+            raise TypeError(f"Unable to write {type(obj)} to a MSH file")
 
         if self.mesh is None:
             self.mesh = mesh
@@ -922,9 +916,7 @@ class MSHFile(GmshFile):
         self.fileobj.write(str(numNodes) + '\n')
 
         for i in range(numNodes):
-            self.fileobj.write("%s %s %s " % (str(i + 1),
-                                              str(coords[0, i]),
-                                              str(coords[1, i])))
+            self.fileobj.write(f"{str(i + 1)} {str(coords[0, i])} {str(coords[1, i])} ")
             if dimensions == 2:
                 self.fileobj.write("0 \n")
             elif dimensions == 3:
@@ -962,7 +954,7 @@ class MSHFile(GmshFile):
 
             numVertices = len(vertexList)
             elementType = self._getElementType(numVertices, dimensions)
-            self.fileobj.write("%s %s 0 " % (str(i + 1), str(elementType)))
+            self.fileobj.write(f"{str(i + 1)} {str(elementType)} 0 ")
 
             self.fileobj.write(" ".join([str(a + 1) for a in vertexList]) + "\n")
 
@@ -1017,25 +1009,23 @@ class MSHFile(GmshFile):
         # establish map. This works because allVerts is a sorted set.
         vertGIDtoIdx[allVerts] = nx.arange(len(allVerts))
 
-        nodesFile = open(self.nodesPath, 'r')
-        nodesFile.readline() # skip number of nodes
+        with open(self.nodesPath, 'r') as nodesFile:
+            nodesFile.readline() # skip number of nodes
 
-        # now we walk through node file with a sorted unique list of vertices
-        # in hand. When we encounter 0th element in `allVerts`, save it
-        # to `vertexCoords` then pop its ID off `allVerts`.
-        for node in nodesFile:
-            line   = node.split()
-            nodeID = int(line[0])
+            # now we walk through node file with a sorted unique list of vertices
+            # in hand. When we encounter 0th element in `allVerts`, save it
+            # to `vertexCoords` then pop its ID off `allVerts`.
+            for node in nodesFile:
+                line   = node.split()
+                nodeID = int(line[0])
 
-            if nodeID == allVerts[nodeCount]:
-                newVert = [float(x) for x in line[1:self.coordDimensions+1]]
-                vertexCoords[nodeCount,:] = nx.array(newVert)
-                nodeCount += 1
+                if nodeID == allVerts[nodeCount]:
+                    newVert = [float(x) for x in line[1:self.coordDimensions+1]]
+                    vertexCoords[nodeCount,:] = nx.array(newVert)
+                    nodeCount += 1
 
-            if len(allVerts) == nodeCount:
-                break
-
-        nodesFile.close()
+                if len(allVerts) == nodeCount:
+                    break
 
         # transpose for FiPy
         transCoords = vertexCoords.swapaxes(0, 1)
@@ -1079,92 +1069,75 @@ class MSHFile(GmshFile):
         faceOffset = -1 # this will be subtracted from gmsh ID to obtain global ID
         pid = self.communicator.procID + 1
 
-        elemsFile = open(self.elemsPath, 'r')
+        with open(self.elemsPath, 'r') as elemsFile:
+            elemsFile.readline() # skip number of elements
+            for el in elemsFile:
+                currLineInts = [int(x) for x in el.split()]
+                elemType     = currLineInts[1]
 
-        elemsFile.readline() # skip number of elements
-        for el in elemsFile:
-            currLineInts = [int(x) for x in el.split()]
-            elemType     = currLineInts[1]
+                if elemType in list(self.numFacesPerCell.keys()):
+                    # element is a cell
 
-            if elemType in list(self.numFacesPerCell.keys()):
-                # element is a cell
+                    (cellOffset,
+                     tags,
+                     physicalEntity,
+                     geometricalEntity) = _parseTags(offset=cellOffset,
+                                                     currLineInts=currLineInts)
+                    currLineInts[0] -= cellOffset
 
-                (cellOffset,
-                 tags,
-                 physicalEntity,
-                 geometricalEntity) = _parseTags(offset=cellOffset,
-                                                 currLineInts=currLineInts)
-                currLineInts[0] -= cellOffset
+                    if len(tags) > 0:
+                        # next item is a count
+                        if tags[0] != len(tags) - 1:
+                            warnings.warn("Partition count %d does not agree with number of remaining tags %d." % (tags[0], len(tags) - 1),
+                                          SyntaxWarning, stacklevel=2)
+                        tags = tags[1:]
 
-                if len(tags) > 0:
-                    # next item is a count
-                    if tags[0] != len(tags) - 1:
-                        warnings.warn("Partition count %d does not agree with number of remaining tags %d." % (tags[0], len(tags) - 1),
-                                      SyntaxWarning, stacklevel=2)
-                    tags = tags[1:]
+                    if self.communicator.Nproc > 1:
+                        for tag in tags:
+                            if -tag == pid:
+                                # if we're collecting ghost cells and this is our ghost cell
+                                ghostsData.add(currLine=currLineInts, elType=elemType,
+                                               physicalEntity=physicalEntity,
+                                               geometricalEntity=geometricalEntity)
+                            elif tag == pid:
+                                # el is in this processor's partition or we collect all cells
+                                cellsData.add(currLine=currLineInts, elType=elemType,
+                                              physicalEntity=physicalEntity,
+                                              geometricalEntity=geometricalEntity)
+                    else:
+                        # we collect all cells
+                        cellsData.add(currLine=currLineInts, elType=elemType,
+                                      physicalEntity=physicalEntity,
+                                      geometricalEntity=geometricalEntity)
+                elif elemType in list(self.numVertsPerFace.keys()):
+                    # element is a face
 
-                if self.communicator.Nproc > 1:
-                    for tag in tags:
-                        if -tag == pid:
-                            # if we're collecting ghost cells and this is our ghost cell
-                            ghostsData.add(currLine=currLineInts, elType=elemType,
-                                           physicalEntity=physicalEntity,
-                                           geometricalEntity=geometricalEntity)
-                        elif tag == pid:
-                            # el is in this processor's partition or we collect all cells
-                            cellsData.add(currLine=currLineInts, elType=elemType,
-                                          physicalEntity=physicalEntity,
-                                          geometricalEntity=geometricalEntity)
-                else:
-                    # we collect all cells
-                    cellsData.add(currLine=currLineInts, elType=elemType,
+                    (faceOffset,
+                     tags,
+                     physicalEntity,
+                     geometricalEntity) = _parseTags(offset=faceOffset,
+                                                     currLineInts=currLineInts)
+                    currLineInts[0] -= faceOffset
+
+                    facesData.add(currLine=currLineInts, elType=elemType,
                                   physicalEntity=physicalEntity,
                                   geometricalEntity=geometricalEntity)
-            elif elemType in list(self.numVertsPerFace.keys()):
-                # element is a face
-
-                (faceOffset,
-                 tags,
-                 physicalEntity,
-                 geometricalEntity) = _parseTags(offset=faceOffset,
-                                                 currLineInts=currLineInts)
-                currLineInts[0] -= faceOffset
-
-                facesData.add(currLine=currLineInts, elType=elemType,
-                              physicalEntity=physicalEntity,
-                              geometricalEntity=geometricalEntity)
-
-        elemsFile.close()
 
         return cellsData, ghostsData, facesData
 
 
     def _parseNamesFile(self):
-        physicalNames = {
-            0: dict(),
-            1: dict(),
-            2: dict(),
-            3: dict()
-        }
+        physicalNames = {0: {}, 1: {}, 2: {}, 3: {}}
         if self.namesPath is not None:
-            namesFile = open(self.namesPath, 'r')
-
-            namesFile.readline() # skip number of elements
-            for nm in namesFile:
-                nm = nm.split()
-                if self.version > 2.0:
-                    dim = [int(nm.pop(0))]
-                else:
-                    # Gmsh format prior to 2.1 did not unambiguously tie
-                    # physical names to physical entities of different dimensions
-                    # http://article.gmane.org/gmane.comp.cad.gmsh.general/1601
-                    dim = [0, 1, 2, 3]
-                num = int(nm.pop(0))
-                name = " ".join(nm)[1:-1]
-                for d in dim:
-                    physicalNames[d][name] = int(num)
-
-            namesFile.close()
+            with open(self.namesPath, 'r') as namesFile:
+                namesFile.readline() # skip number of elements
+                for nm in namesFile:
+                    nm = nm.split()
+                    dim = [int(nm.pop(0))] if self.version > 2.0 else [0, 1, 2, 3]
+                    num = int(nm.pop(0))
+                    name = " ".join(nm)[1:-1]
+                    for d in dim:
+                        physicalNames[d][name] = num
 
         return physicalNames
 
@@ -1179,13 +1152,20 @@ class MSHFile(GmshFile):
         self.physicalFaceMap = FaceVariable(mesh=mesh, value=self.physicalFaceMap)
         self.geometricalFaceMap = FaceVariable(mesh=mesh, value=self.geometricalFaceMap)
 
-        physicalCells = dict()
-        for name in list(self.physicalNames[self.dimensions].keys()):
-            physicalCells[name] = (self.physicalCellMap == self.physicalNames[self.dimensions][name])
+        physicalCells = {
+            name: (
+                self.physicalCellMap == self.physicalNames[self.dimensions][name]
+            )
+            for name in list(self.physicalNames[self.dimensions].keys())
+        }
 
-        physicalFaces = dict()
-        for name in list(self.physicalNames[self.dimensions-1].keys()):
-            physicalFaces[name] = (self.physicalFaceMap == self.physicalNames[self.dimensions-1][name])
+        physicalFaces = {
+            name: (
+                self.physicalFaceMap
+                == self.physicalNames[self.dimensions - 1][name]
+            )
+            for name in list(self.physicalNames[self.dimensions - 1].keys())
+        }
 
         return (self.physicalCellMap,
                 self.geometricalCellMap,
@@ -2242,12 +2222,7 @@ class GmshGrid2D(Gmsh2D):
         width  = nx * dx
         numLayers = int(ny / float(dy))
 
-        if _gmshVersion() < StrictVersion("2.7"):
-            # kludge: must offset cellSize by `eps` to work properly
-            eps = float(dx)/(nx * 10)
-        else:
-            eps = 0.
-
+        eps = float(dx)/(nx * 10) if _gmshVersion() < StrictVersion("2.7") else 0.
         return """
             ny       = %(ny)g;
             nx       = %(nx)g;
@@ -2316,12 +2291,7 @@ class GmshGrid3D(Gmsh3D):
         width  = nx * dx
         depth  = nz * dz
 
-        if _gmshVersion() < StrictVersion("2.7"):
-            # kludge: must offset cellSize by `eps` to work properly
-            eps = float(dx)/(nx * 10)
-        else:
-            eps = 0.
-
+        eps = float(dx)/(nx * 10) if _gmshVersion() < StrictVersion("2.7") else 0.
         return """
             ny       = %(ny)g;
             nx       = %(nx)g;

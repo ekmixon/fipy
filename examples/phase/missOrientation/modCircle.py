@@ -54,6 +54,7 @@ data and compares it with the ``phase`` variable.
 1
 
 """
+
 from __future__ import division
 from __future__ import unicode_literals
 from builtins import range
@@ -64,11 +65,7 @@ from fipy import input
 from fipy import CellVariable, ModularVariable, Grid2D, TransientTerm, ExplicitDiffusionTerm, ImplicitSourceTerm, Viewer
 from fipy.tools import numerix
 
-if __name__ == '__main__':
-    steps = 100
-else:
-    steps = 10
-
+steps = 100 if __name__ == '__main__' else 10
 timeStepDuration = 0.02
 L = 1.5
 nx = 100
@@ -102,9 +99,9 @@ phaseEq = TransientTerm(phaseTransientCoeff) == \
 
 if __name__ == '__main__':
 
-   phaseViewer = Viewer(vars = phase)
-   phaseViewer.plot()
-   for step in range(steps):
-      phaseEq.solve(phase, dt = timeStepDuration)
-      phaseViewer.plot()
-   input('finished')
+    phaseViewer = Viewer(vars = phase)
+    phaseViewer.plot()
+    for _ in range(steps):
+        phaseEq.solve(phase, dt = timeStepDuration)
+        phaseViewer.plot()
+    input('finished')

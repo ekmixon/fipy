@@ -97,10 +97,8 @@ new = '''\
       ''' % (dir, start)
 script = script.replace(dedent(old), dedent(new))
 
-f = open(path, "w")
-f.write(script)
-f.close()
-
+with open(path, "w") as f:
+    f.write(script)
 pyth = sys.executable or "python"
 
 p = Popen((pyth, path) + args, stdout=PIPE)

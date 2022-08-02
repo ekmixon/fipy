@@ -162,9 +162,11 @@ class UniformGrid1D(UniformGrid):
 
     @property
     def _cellCenters(self):
-        ccs = ((numerix.arange(self.numberOfCells)[numerix.NewAxis, ...] + 0.5) \
-               * self.dx + self.origin) * self.scale['length']
-        return ccs
+        return (
+            (numerix.arange(self.numberOfCells)[numerix.NewAxis, ...] + 0.5)
+            * self.dx
+            + self.origin
+        ) * self.scale['length']
 
     @property
     def _cellDistances(self):

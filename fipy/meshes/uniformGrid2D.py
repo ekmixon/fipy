@@ -289,9 +289,7 @@ class UniformGrid2D(UniformGrid):
         indices = numerix.indices((self.nx, self.ny))
         centers[0] = (indices[0] + 0.5) * self.dx
         centers[1] = (indices[1] + 0.5) * self.dy
-        ccs = centers.reshape((2, self.numberOfCells),
-                               order='F') + self.origin
-        return ccs
+        return centers.reshape((2, self.numberOfCells), order='F') + self.origin
 
     @property
     def _cellDistances(self):

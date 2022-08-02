@@ -54,7 +54,7 @@ class Matplotlib2DContourViewer(AbstractMatplotlib2DViewer):
             the Variable's mesh.
 
         """
-        kwlimits.update(limits)
+        kwlimits |= limits
         AbstractMatplotlib2DViewer.__init__(self, vars=vars, title=title,
                                             cmap=cmap, colorbar=colorbar, axes=axes,
                                             figaspect=figaspect,
@@ -68,9 +68,9 @@ class Matplotlib2DContourViewer(AbstractMatplotlib2DViewer):
         from fipy.meshes.mesh2D import Mesh2D
         from fipy.variables.cellVariable import CellVariable
         vars = [var for var in AbstractMatplotlib2DViewer._getSuitableVars(self, vars) \
-          if ((isinstance(var.mesh, Mesh2D) and isinstance(var, CellVariable))
+              if ((isinstance(var.mesh, Mesh2D) and isinstance(var, CellVariable))
               and var.rank == 0)]
-        if len(vars) == 0:
+        if not vars:
             from fipy.viewers import MeshDimensionError
             raise MeshDimensionError("Matplotlib2DViewer can only display a rank-0, 2D CellVariable")
         # this viewer can only display one variable
@@ -78,7 +78,6 @@ class Matplotlib2DContourViewer(AbstractMatplotlib2DViewer):
 
     def _plot(self):
 ##         plt.clf()
-
 ##         ## Added garbage collection since matplotlib objects seem to hang
 ##         ## around and accumulate.
 ##         import gc

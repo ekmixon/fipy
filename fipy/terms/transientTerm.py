@@ -112,10 +112,7 @@ class TransientTerm(CellTerm):
         [[-2.]]
 
         """
-        if var is self.var or self.var is None:
-            return self._getGeomCoeff(var)
-        else:
-            return None
+        return self._getGeomCoeff(var) if var is self.var or self.var is None else None
 
     @property
     def _transientVars(self):
@@ -125,7 +122,7 @@ class TransientTerm(CellTerm):
         if dt is None:
             raise TypeError("`dt` must be specified.")
         if numerix.getShape(dt) != ():
-            raise TypeError("`dt` must be a single number, not a " + type(dt).__name__)
+            raise TypeError(f"`dt` must be a single number, not a {type(dt).__name__}")
         return float(dt)
 
     def _test(self):

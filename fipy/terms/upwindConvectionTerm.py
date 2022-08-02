@@ -25,7 +25,7 @@ class UpwindConvectionTerm(_AbstractUpwindConvectionTerm):
         solver = solver or super(UpwindConvectionTerm, self)._getDefaultSolver(var, solver, *args, **kwargs)
         if solver and not solver._canSolveAsymmetric():
             import warnings
-            warnings.warn("%s cannot solve asymmetric matrices" % solver)
+            warnings.warn(f"{solver} cannot solve asymmetric matrices")
         from fipy.solvers import DefaultAsymmetricSolver
         return solver or DefaultAsymmetricSolver(*args, **kwargs)
 

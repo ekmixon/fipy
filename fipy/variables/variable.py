@@ -320,11 +320,10 @@ class Variable(object):
     def __repr__(self):
         if hasattr(self, 'name') and len(self.name) > 0:
             return self.name
-        else:
-            s = self.__class__.__name__ + '('
-            s += 'value=' + repr(self.value)
-            s += ')'
-            return s
+        s = f'{self.__class__.__name__}('
+        s += f'value={repr(self.value)}'
+        s += ')'
+        return s
 
     def _getCIndexString(self, shape):
         r"""
@@ -356,10 +355,7 @@ class Variable(object):
                 return '[i + j * ni]'
         elif dimensions == 3:
             if shape[-1] == 1:
-                if shape[-2] == 1:
-                    return '[k]'
-                else:
-                    return '[j + k * nj]'
+                return '[k]' if shape[-2] == 1 else '[j + k * nj]'
             elif shape[-2] == 1:
                 return '[i + k * ni * nj]'
             else:
@@ -367,7 +363,7 @@ class Variable(object):
 
 
     def _getCstring(self, argDict={}, id="", freshen=None):
-         """
+        """
          Generate the string and dictionary to be used in inline
              >>> from future.utils import text_to_native_str as ttns
 
@@ -403,36 +399,32 @@ class Variable(object):
 
          """
 
-         identifier = 'var%s' % (id)
+        identifier = f'var{id}'
 
-         v = self.value
+        v = self.value
 
-         if type(v) not in (type(numerix.array(1)),):
-             varray = numerix.array(v)
-         else:
-             varray = v
+        varray = numerix.array(v) if type(v) not in (type(numerix.array(1)),) else v
+        if len(varray.shape) == 0:
+            if varray.dtype in (numerix.array(1).dtype,):
+                argDict[identifier] = int(varray)
+            elif varray.dtype in (numerix.array(1.).dtype,):
+                argDict[identifier] = float(varray)
+            else:
+                argDict[identifier] = varray
+        else:
+            argDict[identifier] = varray
 
-         if len(varray.shape) == 0:
-             if varray.dtype in (numerix.array(1).dtype,):
-                 argDict[identifier] = int(varray)
-             elif varray.dtype in (numerix.array(1.).dtype,):
-                 argDict[identifier] = float(varray)
-             else:
-                 argDict[identifier] = varray
-         else:
-             argDict[identifier] = varray
+        try:
+            shape = self.opShape
+        except AttributeError:
+            shape = self.shape
 
-         try:
-             shape = self.opShape
-         except AttributeError:
-             shape = self.shape
-
-         if len(shape) == 0:
-             return identifier
-         elif len(shape) == 1 and shape[0] == 1:
-             return identifier + '[0]'
-         else:
-             return identifier + self._getCIndexString(shape)
+        if len(shape) == 0:
+            return identifier
+        elif len(shape) == 1 and shape[0] == 1:
+            return f'{identifier}[0]'
+        else:
+            return identifier + self._getCIndexString(shape)
 
     def tostring(self, max_line_width=75, precision=8, suppress_small=False, separator=' '):
         return numerix.tostring(self.value,
@@ -644,11 +636,13 @@ class Variable(object):
                 v = self._value
                 if isinstance(v, PF):
                     v = self._value.value
-                if type(value) in (type(1), type(1.)):
-                    if isinstance(v, type(numerix.array(1))):
-                        if v.shape is not ():
+                if (
+                    type(value) in (type(1), type(1.0))
+                    and isinstance(v, type(numerix.array(1)))
+                    and v.shape is not ()
+                ):
 ##                        if len(v) > 1:
-                            value = numerix.resize(value, v.shape).astype(v.dtype)
+                    value = numerix.resize(value, v.shape).astype(v.dtype)
 
             if (unit is not None
                 or isinstance(value, string_types)
@@ -707,11 +701,7 @@ class Variable(object):
             tmp[:] = value
             tmp = numerix.where(where, tmp, self.value)
         else:
-            if hasattr(value, 'copy'):
-                tmp = value.copy()
-            else:
-                tmp = value
-
+            tmp = value.copy() if hasattr(value, 'copy') else value
         value = self._makeValue(value=tmp, unit=unit, array=None)
 
         if numerix.getShape(self._value) == ():
@@ -760,10 +750,7 @@ class Variable(object):
         >>> numerix.allequal(Variable(value=(3, 4), unit="m").shape, (2,))
         True
         """
-        if self._value is not None:
-            return numerix.getShape(self._value)
-        else:
-            return ()
+        return numerix.getShape(self._value) if self._value is not None else ()
 
     shape = property(_getShape)
 
@@ -882,7 +869,7 @@ class Variable(object):
 
         from fipy.tools import inline
         argDict = {}
-        string = self._getCstring(argDict=argDict, freshen=True) + ';'
+        string = f'{self._getCstring(argDict=argDict, freshen=True)};'
 
         try:
             shape = self.opShape
@@ -974,19 +961,20 @@ class Variable(object):
         if other is None:
             return Variable
 
-        if self._broadcastShape(other) is not None:
-            # If self and other have the same base class, result has that base class.
-            # If self derives from other, result has self's base class.
-            # If other derives from self, result has other's base class.
-            # If self and other don't have a common base, we don't know how to combine them.
-            from fipy.variables.constant import _Constant
-            if isinstance(self, other._getArithmeticBaseClass()) or isinstance(other, _Constant):
-                return self._getArithmeticBaseClass()
-            else:
-                return None
-        else:
+        if self._broadcastShape(other) is None:
             # If self and other have un-broadcastable shapes, we don't know how to combine them.
             return None
+        # If self and other have the same base class, result has that base class.
+        # If self derives from other, result has self's base class.
+        # If other derives from self, result has other's base class.
+        # If self and other don't have a common base, we don't know how to combine them.
+        from fipy.variables.constant import _Constant
+        return (
+            self._getArithmeticBaseClass()
+            if isinstance(self, other._getArithmeticBaseClass())
+            or isinstance(other, _Constant)
+            else None
+        )
 
     def _OperatorVariableClass(self, baseClass=None):
         from fipy.variables import operatorVariable
@@ -1410,11 +1398,7 @@ class Variable(object):
 
         opdict = getattr(self, opname)
         if axis not in opdict:
-            if axis is None:
-                opShape = ()
-            else:
-                opShape=self.shape[:axis] + self.shape[axis+1:]
-
+            opShape = () if axis is None else self.shape[:axis] + self.shape[axis+1:]
             opdict[axis] = self._UnaryOperatorVariable(op,
                                                        operatorClass=self._axisClass(axis=axis),
                                                        opShape=opShape,

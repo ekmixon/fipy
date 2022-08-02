@@ -206,8 +206,10 @@ class UniformGrid3D(UniformGrid):
         centers[0] = (indices[0] + 0.5) * self.dx
         centers[1] = (indices[1] + 0.5) * self.dy
         centers[2] = (indices[2] + 0.5) * self.dz
-        ccs = numerix.reshape(centers.swapaxes(1, 3), (3, self.numberOfCells)) + self.origin
-        return ccs
+        return (
+            numerix.reshape(centers.swapaxes(1, 3), (3, self.numberOfCells))
+            + self.origin
+        )
 
     @property
     def _cellDistances(self):

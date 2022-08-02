@@ -33,7 +33,9 @@ def _BinaryOperatorVariable(operatorClass=None):
         True
 
     """
-    # declare a binary operator class with the desired base class
+# declare a binary operator class with the desired base class
+
+
     class binOp(operatorClass):
 
         def _calcValue_(self):
@@ -49,21 +51,23 @@ def _BinaryOperatorVariable(operatorClass=None):
 
         @property
         def unit(self):
-            if self._unit is None:
-                try:
-                    var = self._varProxy
-                    return self._extractUnit(self.op(var[0], var[1]))
-                except:
-                    return self._extractUnit(self._calcValue_())
-            else:
+            if self._unit is not None:
                 return self._unit
+
+            try:
+                var = self._varProxy
+                return self._extractUnit(self.op(var[0], var[1]))
+            except:
+                return self._extractUnit(self._calcValue_())
 
         def _getRepresentation(self, style="__repr__", argDict={}, id=id, freshen=False):
             self.id = id
             if (style == "__repr__") and hasattr(self, '_name') and len(self._name) > 0:
                 return self._name
             else:
-                return "(" + operatorClass._getRepresentation(self, style=style, argDict=argDict, id=id, freshen=freshen) + ")"
+                return f"({operatorClass._getRepresentation(self, style=style, argDict=argDict, id=id, freshen=freshen)})"
+
+
 
     return binOp
 

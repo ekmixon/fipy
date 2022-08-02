@@ -24,7 +24,7 @@ for solver, group1 in df.groupby('solver'):
         ax.errorbar(stats.mean().speedup.index, stats.mean().speedup, yerr=stats.std().speedup, 
                     marker=markers[solver], color=colors[solver], linestyle=linestyles[nthreads], linewidth=2,
                     markersize=12, label="{} - {:.0f} thread(s)".format(solver, nthreads))
-                    
+
 plt.xscale('log')
 plt.yscale('log')
 

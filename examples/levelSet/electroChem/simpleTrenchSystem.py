@@ -296,7 +296,7 @@ def runSimpleTrenchSystem(faradaysConstant=9.6e4,
 
     try:
         import os
-        filepath = os.path.splitext(__file__)[0] + '.gz'
+        filepath = f'{os.path.splitext(__file__)[0]}.gz'
         print(catalystVar.allclose(numerix.loadtxt(filepath), rtol = 1e-4))
     except:
         return 0

@@ -20,7 +20,7 @@ def _getframeinfo(level, context=1):
     Much faster alternative to `inspect.getouterframes(inspect.currentframe())[level]`
     """
     frame = inspect.currentframe()
-    for l in range(level+1):
+    for _ in range(level+1):
         frame = frame.f_back
 
     return (frame,) + inspect.getframeinfo(frame, context=context)
@@ -53,11 +53,7 @@ def _operatorVariableComment(canInline=True, level=3):
         # to find the offending code in both the C++ source and in the Python
         #line %d "%s"
 
-        if finfo[4] is not None:
-            code = "\n".join(finfo[4])
-        else:
-            code = ""
-
+        code = "\n".join(finfo[4]) if finfo[4] is not None else ""
         return '''
 /*
 %s:%d
@@ -75,9 +71,7 @@ def _runInline(code_in, converters=None, verbose=0, comment=None, **args):
     if 'ni' in argsKeys:
         dimensions = 1
         if 'nj' in argsKeys:
-            dimensions = 2
-            if 'nk' in argsKeys:
-                dimensions = 3
+            dimensions = 3 if 'nk' in argsKeys else 2
     else:
         dimensions = 0
 

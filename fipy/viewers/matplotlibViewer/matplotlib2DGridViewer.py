@@ -42,7 +42,7 @@ class Matplotlib2DGridViewer(AbstractMatplotlib2DViewer):
             ratio. If arg is `auto`, the aspect ratio will be determined from
             the Variable's mesh.
         """
-        kwlimits.update(limits)
+        kwlimits |= limits
         AbstractMatplotlib2DViewer.__init__(self, vars=vars, title=title,
                                             cmap=cmap, colorbar=colorbar, axes=axes, figaspect=figaspect,
                                             **kwlimits)
@@ -74,9 +74,9 @@ class Matplotlib2DGridViewer(AbstractMatplotlib2DViewer):
         from fipy.meshes.uniformGrid2D import UniformGrid2D
         from fipy.variables.cellVariable import CellVariable
         vars = [var for var in AbstractMatplotlib2DViewer._getSuitableVars(self, vars) \
-          if (isinstance(var.mesh, UniformGrid2D) and isinstance(var, CellVariable)
+              if (isinstance(var.mesh, UniformGrid2D) and isinstance(var, CellVariable)
               and var.rank == 0)]
-        if len(vars) == 0:
+        if not vars:
             from fipy.viewers import MeshDimensionError
             raise MeshDimensionError("Matplotlib2DGridViewer can only display a rank-0 CellVariable with a UniformGrid2D mesh")
         # this viewer can only display one variable

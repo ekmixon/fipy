@@ -23,9 +23,9 @@ class _CoupledCellVariable(object):
 
     @property
     def mesh(self):
-        meshes = list(set([var.mesh for var in self.vars]))
+        meshes = list({var.mesh for var in self.vars})
 
-        if len(meshes) == 0:
+        if not meshes:
             raise Exception("There are no Meshes defined")
         elif len(meshes) > 1:
             raise Exception("All Variables must be defined on the same Mesh")
@@ -38,10 +38,7 @@ class _CoupledCellVariable(object):
     def __setitem__(self, index, value):
         N = self.mesh.numberOfCells
         for i, var in enumerate(self.vars):
-            if numerix.shape(value) == ():
-                var[index] = value
-            else:
-                var[index] = value[i * N:(i + 1) * N]
+            var[index] = value if numerix.shape(value) == () else value[i * N:(i + 1) * N]
 
     def _getValue(self):
         return numerix.concatenate([numerix.array(var.value) for var in self.vars])

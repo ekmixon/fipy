@@ -2,6 +2,7 @@
 This example shows the failure of advecting a square pulse with a first
 order explicit upwind scheme.
 """
+
 from __future__ import division
 from __future__ import unicode_literals
 
@@ -38,7 +39,7 @@ eq = TransientTerm() - ExplicitUpwindConvectionTerm(coeff=(velocity,))
 if __name__ == '__main__':
 
     viewer = Viewer(vars=(var,))
-    for step in range(steps):
+    for _ in range(steps):
         eq.solve(var,
                  dt = timeStepDuration,
                  solver = LinearLUSolver(tolerance=1.e-15, iterations=2000))

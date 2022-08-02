@@ -23,7 +23,7 @@ class MultiViewer(AbstractViewer):
         self.viewers = viewers
 
     def setLimits(self, limits={}, **kwlimits):
-        kwlimits.update(limits)
+        kwlimits |= limits
         for viewer in self.viewers:
             viewer.setLimits(**kwlimits)
 

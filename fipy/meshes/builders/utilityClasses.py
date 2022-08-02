@@ -60,7 +60,7 @@ class _DOffsets(object):
 
         for d, n, i in zip(ds, ns, list(range(len(ds)))):
             if numerix.getShape(d) is not ():
-                offsetList.append(numerix.sum(d[0:offset[i]]))
+                offsetList.append(numerix.sum(d[:offset[i]]))
                 newDs.append(d[offset[i]:offset[i] + n])
             else:
                 if len(offset) == 1:
@@ -89,12 +89,10 @@ class _NonuniformNumPts(_AbstractNumPts):
     @staticmethod
     def calcNs(ns, ds):
         axis = ["x", "y", "z"][:len(ns)]
-        newNs = []
-
-        for a, d, n in zip(axis, ds, ns):
-            newNs.append(_NonuniformNumPts._calcNumPts(d=d, n=n, axis=a))
-
-        return newNs
+        return [
+            _NonuniformNumPts._calcNumPts(d=d, n=n, axis=a)
+            for a, d, n in zip(axis, ds, ns)
+        ]
 
     @staticmethod
     def _calcNumPts(d, n = None, axis = "x"):
@@ -117,8 +115,8 @@ class _NonuniformNumPts(_AbstractNumPts):
             n = int(n or 1)
         else:
             n = int(n or len(d))
-            if n != len(d) and len(d) != 1:
-                raise IndexError("n%s != len(d%s)" % (axis, axis))
+            if n != len(d) != 1:
+                raise IndexError(f"n{axis} != len(d{axis})")
 
         return n
 

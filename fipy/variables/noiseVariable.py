@@ -32,10 +32,9 @@ class NoiseVariable(CellVariable):
         """
         Copy the value of the `NoiseVariable` to a static `CellVariable`.
         """
-        return CellVariable(mesh = self.mesh,
-                            name = self.name + "_old",
-                            value = self.value,
-                            hasOld = 0)
+        return CellVariable(
+            mesh=self.mesh, name=f"{self.name}_old", value=self.value, hasOld=0
+        )
 
     def scramble(self):
         """
@@ -48,10 +47,7 @@ class NoiseVariable(CellVariable):
 
     def parallelRandom(self):
 
-        if self.mesh.communicator.procID == 0:
-            return self.random()
-        else:
-            return None
+        return self.random() if self.mesh.communicator.procID == 0 else None
 
     def _calcValue(self):
         from fipy.tools import parallelComm

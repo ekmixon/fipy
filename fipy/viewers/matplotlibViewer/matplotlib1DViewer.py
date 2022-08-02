@@ -42,7 +42,7 @@ class Matplotlib1DViewer(AbstractMatplotlibViewer):
         axes : ~matplotlib.axes.Axes
             if not `None`, `vars` will be plotted into this Matplotlib `Axes` object
         """
-        kwlimits.update(limits)
+        kwlimits |= limits
         AbstractMatplotlibViewer.__init__(self, vars=vars, title=title, axes=axes, **kwlimits)
 
         if xlog and ylog:
@@ -76,10 +76,7 @@ class Matplotlib1DViewer(AbstractMatplotlibViewer):
 
         def fset(self, value):
             ax = self.axes.get_yaxis()
-            if value:
-                ax = self.axes.set_yscale('log')
-            else:
-                ax = self.axes.set_yscale('linear')
+            ax = self.axes.set_yscale('log') if value else self.axes.set_yscale('linear')
 
         return locals()
 
@@ -95,7 +92,7 @@ class Matplotlib1DViewer(AbstractMatplotlibViewer):
 
         if len(vars) > 1:
             vars = [var for var in vars if var.mesh is vars[0].mesh]
-        if len(vars) == 0:
+        if not vars:
             from fipy.viewers import MeshDimensionError
             raise MeshDimensionError("Can only plot 1D data")
         return vars

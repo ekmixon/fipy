@@ -114,11 +114,7 @@ class _FaceGradVariable(FaceVariable):
         ## both work, but this numpy.empty((3, 0))[...,[]] is
         ## broken.
 
-        if self.var.faceValue.shape[-1] != 0:
-            s = (Ellipsis, faceMask)
-        else:
-            s = (faceMask,)
-
+        s = (Ellipsis, faceMask) if self.var.faceValue.shape[-1] != 0 else (faceMask, )
         N2[s] = self.var.faceValue[s]
 
         N = (N2 - numerix.take(self.var, id1, axis=-1)) / dAP

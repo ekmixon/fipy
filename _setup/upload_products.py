@@ -24,41 +24,53 @@ class upload_products(Command):
 
     def run(self):
         if self.pdf:
-            fname = 'dist/fipy-%s.pdf' % self.distribution.metadata.get_version()
+            fname = f'dist/fipy-{self.distribution.metadata.get_version()}.pdf'
             print("setting permissions of manual...")
             os.system('chmod -R g+w documentation/_build/latex/fipy.pdf')
-            
+
             print("linking manual to `dist/`...")
             os.system('mkdir dist/')
-            os.system('ln -f documentation/_build/latex/fipy.pdf %s' % fname)
-            
+            os.system(f'ln -f documentation/_build/latex/fipy.pdf {fname}')
+
             print("uploading pdf...")
-            os.system('rsync -pgoDLC -e ssh %s %s/download/' % (fname, os.environ['FIPY_WWWHOST']))
+            os.system(
+                f"rsync -pgoDLC -e ssh {fname} {os.environ['FIPY_WWWHOST']}/download/"
+            )
+
 
         if self.html:
             print("setting group and ownership of web pages...")
             os.system('chmod -R g+w documentation/_build/html/')
-            
+
             print("uploading web pages...")
             # The -t flag (implicit in -a) is suddenly causing problems
             # os.system('rsync -aLC -e ssh %s %s'%('documentation/www/', os.environ['FIPY_WWWHOST']))
-            os.system('rsync -rlpgoDLC -e ssh %s %s' % ('documentation/_build/html/', os.environ['FIPY_WWWHOST']))
+            os.system(
+                f"rsync -rlpgoDLC -e ssh documentation/_build/html/ {os.environ['FIPY_WWWHOST']}"
+            )
+
 
         if self.tarball:
-            fname = 'dist/FiPy-%s.tar.gz' % self.distribution.metadata.get_version()
-            print("setting permissions for %s ..." % fname)
-            os.system('chmod -R g+w %s' % fname)
+            fname = f'dist/FiPy-{self.distribution.metadata.get_version()}.tar.gz'
+            print(f"setting permissions for {fname} ...")
+            os.system(f'chmod -R g+w {fname}')
 
             print("uploading tarball...")
-            os.system('rsync -pgoDLC -e ssh %s %s/download/' % (fname, os.environ['FIPY_WWWHOST']))
+            os.system(
+                f"rsync -pgoDLC -e ssh {fname} {os.environ['FIPY_WWWHOST']}/download/"
+            )
+
 
         if self.winzip:
-            fname = 'dist/FiPy-%s.win32.zip' % self.distribution.metadata.get_version()
-            print("setting permissions for %s ..." % fname)
-            os.system('chmod -R g+w %s' % fname)
-            
+            fname = f'dist/FiPy-{self.distribution.metadata.get_version()}.win32.zip'
+            print(f"setting permissions for {fname} ...")
+            os.system(f'chmod -R g+w {fname}')
+
             print("uploading winzip...")
-            os.system('rsync -pgoDLC -e ssh %s %s/download/' % (fname, os.environ['FIPY_WWWHOST']))
+            os.system(
+                f"rsync -pgoDLC -e ssh {fname} {os.environ['FIPY_WWWHOST']}/download/"
+            )
+
 
         print("activating web pages...")
         os.system(os.environ['FIPY_WWWACTIVATE'])

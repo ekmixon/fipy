@@ -69,9 +69,10 @@ class release(Command):
         shutil.copyfile("MANIFEST-WINDOWS.in", "MANIFEST.in")
         run_setup("setup.py", ["sdist", "--dist-dir=dist-windows", "--formats=zip"])
         shutil.move(
-            os.path.join("dist-windows", "FiPy-{}.zip".format(version)),
-            os.path.join("dist", "FiPy-{}.win32.zip".format(version)),
+            os.path.join("dist-windows", f"FiPy-{version}.zip"),
+            os.path.join("dist", f"FiPy-{version}.win32.zip"),
         )
+
         os.rmdir("dist-windows")
         os.remove("MANIFEST.in")
 

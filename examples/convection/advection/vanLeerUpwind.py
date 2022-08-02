@@ -28,6 +28,7 @@ should do better than this.
 >>> print(var1.max() > 0.77)
 1
 """
+
 from __future__ import print_function
 from __future__ import division
 from __future__ import unicode_literals
@@ -77,7 +78,7 @@ if __name__ == '__main__':
 
     newVar2 = var2.copy()
 
-    for step in range(steps):
+    for _ in range(steps):
         eq1.solve(var=var1, dt=dt, solver=DefaultAsymmetricSolver())
         eq2.solve(var=var2, dt=dt, solver=DefaultAsymmetricSolver())
         viewer1.plot()

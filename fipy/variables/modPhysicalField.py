@@ -9,8 +9,8 @@ from fipy.tools import numerix
 
 class _ModPhysicalField(PhysicalField):
 
-    def mod(argument):
-        return numerix.fmod(argument + 3. * numerix.pi, 2. * numerix.pi) - numerix.pi
+    def mod(self):
+        return numerix.fmod(self + 3. * numerix.pi, 2. * numerix.pi) - numerix.pi
     mod = staticmethod(mod)
 
     def __sub__(self, other):

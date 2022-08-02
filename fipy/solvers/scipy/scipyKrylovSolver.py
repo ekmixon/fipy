@@ -27,8 +27,7 @@ class _ScipyKrylovSolver(_ScipySolver):
                                 M=M,
                                 atol='legacy')
 
-        if 'FIPY_VERBOSE_SOLVER' in os.environ:
-            if info < 0:
-                PRINT('failure', self._warningList[info].__class__.__name__)
+        if 'FIPY_VERBOSE_SOLVER' in os.environ and info < 0:
+            PRINT('failure', self._warningList[info].__class__.__name__)
 
         return x

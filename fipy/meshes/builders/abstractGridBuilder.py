@@ -47,22 +47,16 @@ class _AbstractGridBuilder(object):
 
         dim = len(ns)
 
-        newDs = []
-
         newdx = PhysicalField(value = ds[0])
         scale = PhysicalField(value = 1, unit = newdx.unit)
         newdx /= scale
 
-        newDs.append(newdx)
-
+        newDs = [newdx]
         for d in ds[1:]: # for remaining ds
             newD = PhysicalField(value = d)
 
             if newD.unit.isDimensionless():
-                if type(d) in [list, tuple]:
-                    newD = numerix.array(d)
-                else:
-                    newD = d
+                newD = numerix.array(d) if type(d) in [list, tuple] else d
             else:
                 newD /= scale
 
@@ -112,8 +106,8 @@ class _AbstractGridBuilder(object):
 
         # "what is spatialNums?" -> see docstring
         if 0 in newNs:
-            newNs = [0 for n in newNs]
-            spatialNums = [0 for n in newNs]
+            newNs = [0 for _ in newNs]
+            spatialNums = [0 for _ in newNs]
         else:
             spatialNums = [n + 1 for n in newNs]
 

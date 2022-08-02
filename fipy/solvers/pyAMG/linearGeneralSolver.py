@@ -16,9 +16,5 @@ class LinearGeneralSolver(_ScipySolver):
     """
 
     def _solve_(self, L, x, b):
-        if 'FIPY_VERBOSE_SOLVER' in os.environ:
-            verbosity = True
-        else:
-            verbosity = False
-
+        verbosity = 'FIPY_VERBOSE_SOLVER' in os.environ
         return solve(L.matrix, b, verb=verbosity, tol=self.tolerance)

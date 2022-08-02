@@ -22,17 +22,17 @@ class build_docs(Command):
     def finalize_options (self):
         pass
 
-    def run (self):
+    def run(self):
         import sphinx.cmd.build
         import sphinx.ext.apidoc
-        
+
         sphinx_args = ['-P', '-n', '-c', 'documentation/', '.']
         apidoc_args = []
-        
+
         if self.cathartic:
             sphinx_args = ['-a', '-E'] + sphinx_args
             apidoc_args = ['--force'] + apidoc_args
-            
+
         sphinx.ext.apidoc.main(['--output-dir=fipy/generated', '--suffix=rst']
                     + apidoc_args + ['fipy'])
         sphinx.ext.apidoc.main(['--output-dir=documentation/tutorial/package/generated', '--suffix=rst']
@@ -46,25 +46,28 @@ class build_docs(Command):
                 sphinx.cmd.build.main(['-b', 'latex'] + sphinx_args + ['documentation/_build/latex/'])
             except SystemExit:
                 pass
-            
+
             outdir = os.path.join('documentation', '_build', 'latex')
-            
+
             from docutils.core import publish_file
 
             for xtra in ("LICENSE", "DISCLAIMER"):
-                publish_file(source_path="%s.rst" % xtra,
-                             destination_path=os.path.join(outdir, "%s.tex" % xtra),
-                             reader_name='standalone',
-                             parser_name='restructuredtext',
-                             writer_name='latex',
-                             settings_overrides= {
-                                 'template': 'documentation/_templates/empty.tex'
-                             })
+                publish_file(
+                    source_path=f"{xtra}.rst",
+                    destination_path=os.path.join(outdir, f"{xtra}.tex"),
+                    reader_name='standalone',
+                    parser_name='restructuredtext',
+                    writer_name='latex',
+                    settings_overrides={
+                        'template': 'documentation/_templates/empty.tex'
+                    },
+                )
+
 
             savedir = os.getcwd()
-            
+
             os.chdir(outdir)
-                
+
             os.system("pdflatex fipy")
             os.system("pdflatex fipy")
             os.system("pdflatex fipy")
@@ -72,5 +75,5 @@ class build_docs(Command):
             os.system("makeindex -s python.ist modfipy")
             os.system("pdflatex fipy")
             os.system("pdflatex fipy")
-                
+
             os.chdir(savedir)

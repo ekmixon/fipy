@@ -271,9 +271,7 @@ class AdsorbingSurfactantEquation(object):
         else:
             vars = (surfactantVar,)
 
-        total = 0
-        for var in vars:
-            total += var.interfaceVar
+        total = sum(var.interfaceVar for var in vars)
         maxVar = (total > 1) * distanceVar._cellInterfaceFlag
 
         val = distanceVar.cellInterfaceAreas / mesh.cellVolumes

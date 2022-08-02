@@ -53,7 +53,8 @@ class FaceTerm(_NonDiffusionTerm):
             LL, bb = boundaryCondition._buildMatrix(SparseMatrix, N, M, coeffMatrix)
 
             if 'FIPY_DISPLAY_MATRIX' in os.environ:
-                self._viewer.title = r"%s %s" % (boundaryCondition.__class__.__name__, self.__class__.__name__)
+                self._viewer.title = f"{boundaryCondition.__class__.__name__} {self.__class__.__name__}"
+
                 self._viewer.plot(matrix=LL, RHSvector=bb)
                 from fipy import input
                 input()

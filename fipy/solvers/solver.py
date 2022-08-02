@@ -110,10 +110,9 @@ class Solver(object):
     def _calcResidualVector(self, residualFn=None):
         if residualFn is not None:
             return residualFn(self.var, self.matrix, self.RHSvector)
-        else:
-            Lx = self.matrix * numerix.array(self.var).flatten()
+        Lx = self.matrix * numerix.array(self.var).flatten()
 
-            return Lx - self.RHSvector
+        return Lx - self.RHSvector
 
     def _calcResidual(self, residualFn=None):
         if residualFn is not None:

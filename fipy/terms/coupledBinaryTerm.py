@@ -97,12 +97,12 @@ class _CoupledBinaryTerm(_AbstractBinaryTerm):
         return (var, matrix, _CoupledCellVariable(RHSvectors))
 
     def __repr__(self):
-        return '(' + repr(self.term) + ' & ' + repr(self.other) + ')'
+        return f'({repr(self.term)} & {repr(self.other)})'
 
     def _getDefaultSolver(self, var, solver, *args, **kwargs):
         if solver and not solver._canSolveAsymmetric():
             import warnings
-            warnings.warn("%s cannot solve asymmetric matrices" % solver)
+            warnings.warn(f"{solver} cannot solve asymmetric matrices")
         from fipy.solvers import DefaultAsymmetricSolver
         return solver or DefaultAsymmetricSolver(*args, **kwargs)
 
@@ -156,25 +156,24 @@ class _CoupledBinaryTerm(_AbstractBinaryTerm):
         unorderedVars = _AbstractBinaryTerm._calcVars(self)
         uncoupledTerms = self._uncoupledTerms
 
-        if len(unorderedVars) == len(uncoupledTerms):
-            unorderedVars = set(unorderedVars)
-            orderedVars = [None] * len(uncoupledTerms)
-
-            for fnc in (lambda index, term: term._transientVars,
-                        lambda index, term: term._diffusionVars,
-                        lambda index, term: list(unorderedVars)):
-                for index, term in enumerate(uncoupledTerms):
-                    if orderedVars[index] is None:
-                        _vars = fnc(index, term)
-                        if  _vars != [] and _vars[0] in unorderedVars:
-                            orderedVars[index] = _vars[0]
-                            unorderedVars.remove(_vars[0])
-
-            return orderedVars
-        else:
+        if len(unorderedVars) != len(uncoupledTerms):
             ## Constituent _CoupledBinaryTerms don't necessarily have the same
             ## number of equations and variables so ordering is unnecessary.
             return unorderedVars
+        unorderedVars = set(unorderedVars)
+        orderedVars = [None] * len(uncoupledTerms)
+
+        for fnc in (lambda index, term: term._transientVars,
+                    lambda index, term: term._diffusionVars,
+                    lambda index, term: list(unorderedVars)):
+            for index, term in enumerate(uncoupledTerms):
+                if orderedVars[index] is None:
+                    _vars = fnc(index, term)
+                    if  _vars != [] and _vars[0] in unorderedVars:
+                        orderedVars[index] = _vars[0]
+                        unorderedVars.remove(_vars[0])
+
+        return orderedVars
 
     def __call__(self, _vars):
         _vars = list(_vars)

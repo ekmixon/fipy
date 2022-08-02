@@ -73,7 +73,10 @@ class _PowerLawConvectionTermAlpha(FaceVariable):
 
             tmp = (1. - P / 10.)
             tmpSqr = tmp * tmp
-            alpha = numerix.where(  (10. >= P) & (P > eps),  ((P-1.) + tmpSqr*tmpSqr*tmp) / P, alpha)
+            alpha = numerix.where(
+                (P <= 10.0) & (P > eps), ((P - 1.0) + tmpSqr * tmpSqr * tmp) / P, alpha
+            )
+
 
             tmp = (1. + P / 10.)
             tmpSqr = tmp * tmp

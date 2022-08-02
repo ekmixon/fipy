@@ -11,11 +11,11 @@ class FaceVariable(_MeshVariable):
     def _variableClass(self):
         return FaceVariable
 
-    def _getShapeFromMesh(mesh):
+    def _getShapeFromMesh(self):
         """
         Return the shape of this variable type, given a particular mesh.
         """
-        return (mesh.numberOfFaces,)
+        return (self.numberOfFaces, )
     _getShapeFromMesh = staticmethod(_getShapeFromMesh)
 
     def _getArithmeticBaseClass(self, other = None):
@@ -29,9 +29,9 @@ class FaceVariable(_MeshVariable):
         return _MeshVariable._getArithmeticBaseClass(self, other)
 
     def copy(self):
-        return self._getArithmeticBaseClass()(mesh=self.mesh,
-                                              name=self.name + "_copy",
-                                              value=self.value)
+        return self._getArithmeticBaseClass()(
+            mesh=self.mesh, name=f"{self.name}_copy", value=self.value
+        )
 
     @property
     def globalValue(self):

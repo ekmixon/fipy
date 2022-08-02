@@ -72,7 +72,7 @@ class Matplotlib2DViewer(AbstractMatplotlib2DViewer):
             ratio. If arg is `auto`, the aspect ratio will be determined from
             the Variable's mesh.
         """
-        kwlimits.update(limits)
+        kwlimits |= limits
         AbstractMatplotlib2DViewer.__init__(self, vars=vars, title=title, figaspect=figaspect,
                                             cmap=cmap, colorbar=colorbar, axes=axes,
                                             **kwlimits)
@@ -118,9 +118,9 @@ class Matplotlib2DViewer(AbstractMatplotlib2DViewer):
         from fipy.meshes.mesh2D import Mesh2D
         from fipy.variables.cellVariable import CellVariable
         vars = [var for var in AbstractMatplotlib2DViewer._getSuitableVars(self, vars) \
-          if ((var.mesh.dim == 2 and isinstance(var, CellVariable))
+              if ((var.mesh.dim == 2 and isinstance(var, CellVariable))
               and var.rank == 0)]
-        if len(vars) == 0:
+        if not vars:
             from fipy.viewers import MeshDimensionError
             raise MeshDimensionError("Matplotlib2DViewer can only display a rank-0, 2D CellVariable")
         # this viewer can only display one variable

@@ -38,14 +38,15 @@ class _NonDiffusionTerm(_UnaryTerm):
 
         """
 
-        if isinstance(other, (int, float)):
-            if isinstance(self.coeff, (list, tuple)):
-                coeff = numerix.array(self.coeff)
-            else:
-                coeff = self.coeff
-            return self.__class__(coeff=other * coeff, var=self.var)
-        else:
+        if not isinstance(other, (int, float)):
             raise TermMultiplyError
+        coeff = (
+            numerix.array(self.coeff)
+            if isinstance(self.coeff, (list, tuple))
+            else self.coeff
+        )
+
+        return self.__class__(coeff=other * coeff, var=self.var)
 
     __rmul__ = __mul__
 
@@ -55,17 +56,22 @@ class _NonDiffusionTerm(_UnaryTerm):
 
     def _getDiagonalSign(self, transientGeomCoeff=None, diffusionGeomCoeff=None):
         if transientGeomCoeff is not None and diffusionGeomCoeff is not None:
-            diagonalSign = numerix.where(numerix.array(numerix.all(transientGeomCoeff == 0, axis=-1)),
-                                         numerix.array(2 * numerix.all(diffusionGeomCoeff[0] <= 0, axis=-1) - 1),
-                                         numerix.array(2 * numerix.all(transientGeomCoeff >= 0, axis=-1) - 1))
-        elif transientGeomCoeff is not None:
-            diagonalSign = 2 * numerix.all(transientGeomCoeff >= 0, axis=-1) - 1
-        elif diffusionGeomCoeff is not None:
-            diagonalSign = 2 * numerix.all(diffusionGeomCoeff[0] <= 0, axis=-1) - 1
-        else:
-            diagonalSign = 1
+            return numerix.where(
+                numerix.array(numerix.all(transientGeomCoeff == 0, axis=-1)),
+                numerix.array(
+                    2 * numerix.all(diffusionGeomCoeff[0] <= 0, axis=-1) - 1
+                ),
+                numerix.array(
+                    2 * numerix.all(transientGeomCoeff >= 0, axis=-1) - 1
+                ),
+            )
 
-        return diagonalSign
+        elif transientGeomCoeff is not None:
+            return 2 * numerix.all(transientGeomCoeff >= 0, axis=-1) - 1
+        elif diffusionGeomCoeff is not None:
+            return 2 * numerix.all(diffusionGeomCoeff[0] <= 0, axis=-1) - 1
+        else:
+            return 1
 
     def _test(self):
         r"""

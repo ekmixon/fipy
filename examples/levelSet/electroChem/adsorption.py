@@ -143,8 +143,7 @@ if __name__ == "__main__":
 
     currentTime = 0.
 
-    for i in range(totalTimeSteps):
-
+    for _ in range(totalTimeSteps):
         ## evaluate the analytical and numerical solution and plot
 
         theta = surfactantVar.interfaceVar[1]

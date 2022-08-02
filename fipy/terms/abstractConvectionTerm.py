@@ -158,7 +158,6 @@ class _AbstractConvectionTerm(FaceTerm):
     def _buildMatrix(self, var, SparseMatrix, boundaryConditions=(), dt=None, transientGeomCoeff=None, diffusionGeomCoeff=None):
 
         var, L, b = FaceTerm._buildMatrix(self, var, SparseMatrix, boundaryConditions=boundaryConditions, dt=dt, transientGeomCoeff=transientGeomCoeff, diffusionGeomCoeff=diffusionGeomCoeff)
-
 ##        if var.rank != 1:
 
         mesh = var.mesh
@@ -167,18 +166,14 @@ class _AbstractConvectionTerm(FaceTerm):
 
             weight = self._getWeight(var, transientGeomCoeff, diffusionGeomCoeff)
 
-            if 'implicit' in weight:
-                alpha = weight['implicit']['cell 1 diag']
-            else:
-                alpha = 0.0
-
+            alpha = weight['implicit']['cell 1 diag'] if 'implicit' in weight else 0.0
             alpha_constraint = numerix.where(var.faceGrad.constraintMask, 1.0, alpha)
 
             def divergence(face_value):
                 return (
                     face_value * \
-                    (var.faceGrad.constraintMask | var.arithmeticFaceValue.constraintMask) * \
-                    self.coeff * mesh.exteriorFaces
+                        (var.faceGrad.constraintMask | var.arithmeticFaceValue.constraintMask) * \
+                        self.coeff * mesh.exteriorFaces
                 ).divergence * mesh.cellVolumes
 
             self.constraintL = divergence(alpha_constraint)

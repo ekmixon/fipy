@@ -95,14 +95,13 @@ def _isPhysical(arr):
     from fipy.variables.variable import Variable
     from fipy.tools.dimensions.physicalField import PhysicalField
 
-    return isinstance(arr, Variable) or isinstance(arr, PhysicalField)
+    return isinstance(arr, (Variable, PhysicalField))
 
 def getUnit(arr):
     if hasattr(arr, "getUnit") and callable(arr.getUnit):
         return arr.unit
-    else:
-        from fipy.tools.dimensions import physicalField
-        return physicalField._unity
+    from fipy.tools.dimensions import physicalField
+    return physicalField._unity
 
 def put(arr, ids, values):
     """
@@ -164,11 +163,7 @@ def reshape(arr, shape):
         oldShape = array(getShape(arr))
         oldShape[oldShape == 0] = 1
 
-        if hasattr(shape, 'index'):
-            index = shape.index(-1)
-        else:
-            index = list(shape).index(-1)
-
+        index = shape.index(-1) if hasattr(shape, 'index') else list(shape).index(-1)
         left = shape[:index]
         right = shape[index+1:]
         newShape = array(left + right)
@@ -243,10 +238,9 @@ def sum(arr, axis=0):
     else:
         if type(arr) in (float, int) or len(arr) == 0 or 0 in arr.shape:
             return NUMERIX.sum(arr, axis)
-        else:
-            if axis is None:
-                axis = 0
-            return NUMERIX.tensordot(NUMERIX.ones(arr.shape[axis], 'l'), arr, (0, axis))
+        if axis is None:
+            axis = 0
+        return NUMERIX.tensordot(NUMERIX.ones(arr.shape[axis], 'l'), arr, (0, axis))
 
 def isFloat(arr):
     if isinstance(arr, NUMERIX.ndarray):
@@ -345,7 +339,7 @@ def tostring(arr, max_line_width=75, precision=8, suppress_small=False, separato
             from numpy.core.arrayprint import _formatInteger
             return _formatInteger(arr, format='%d')
     else:
-        raise TypeError('cannot convert ' + str(arr) + ' to string')
+        raise TypeError(f'cannot convert {str(arr)} to string')
 
 #########################
 #                       #
@@ -576,10 +570,7 @@ def all(a, axis=None, out=None):
         the type is preserved.
 
     """
-    if _isPhysical(a):
-        return a.all(axis=axis)
-    else:
-        return MA.all(a=a, axis=axis, out=out)
+    return a.all(axis=axis) if _isPhysical(a) else MA.all(a=a, axis=axis, out=out)
 
 def isclose(first, second, rtol=1.e-5, atol=1.e-8):
     r"""
@@ -617,17 +608,16 @@ def take(a, indices, axis=0, fill_value=None):
 
         if mask is not MA.nomask:
             taken = MA.array(data=taken, mask=mask)
-        else:
-            if MA.getmask(taken) is MA.nomask and numpy_version == 'old':
-                # numpy 1.1 returns normal array when masked array is filled
-                taken = taken.filled()
+        elif MA.getmask(taken) is MA.nomask and numpy_version == 'old':
+            # numpy 1.1 returns normal array when masked array is filled
+            taken = taken.filled()
 
     elif type(a) in (type(array((0))), type(()), type([])):
         taken = NUMERIX.take(a, indices, axis=axis)
     elif isinstance(a, type(MA.array((0)))):
         taken = MA.take(a, indices, axis=axis)
     else:
-        raise TypeError('cannot take from %s object: %s' % (type(a), repr(a)))
+        raise TypeError(f'cannot take from {type(a)} object: {repr(a)}')
 
     if fill_value is not None and isinstance(taken, type(MA.array((0)))):
         taken = taken.filled(fill_value=fill_value)
@@ -807,11 +797,7 @@ def _indexShape(index, arrayShape):
     # "when the selection object is not a tuple, it will be referred to as if it
     # had been promoted to a 1-tuple, which will be called the selection tuple"
     if not isinstance(index, tuple):
-        if isinstance(index, list):
-            index = tuple(index)
-        else:
-            index = (index,)
-
+        index = tuple(index) if isinstance(index, list) else (index, )
     Nnewaxes = len([element for element in index if element is newaxis])
     desiredRank = len(arrayShape) + Nnewaxes
 
@@ -911,13 +897,10 @@ def _broadcastShapes(shape1, shape2):
         shape1 = (1,) * (len(shape2) - len(shape1)) + shape1
 
     def maxzero(s, o):
-        if s == 0 or o == 0:
-            return 0
-        else:
-            return max(s, o)
+        return 0 if s == 0 or o == 0 else max(s, o)
 
     if logical_and.reduce([(s == o or s == 1 or o == 1) for s, o in zip(shape1, shape2)]):
-        broadcastshape = tuple([maxzero(s, o) for s, o in zip(shape1, shape2)])
+        broadcastshape = tuple(maxzero(s, o) for s, o in zip(shape1, shape2))
     else:
         broadcastshape = None
 
@@ -1002,10 +985,7 @@ if not hasattr(NUMERIX, "in1d"):
         flag = NUMERIX.concatenate( (equal_adj, [False] ) )
         indx = order.argsort(kind='mergesort')[:len( ar1 )]
 
-        if assume_unique:
-            return flag[indx]
-        else:
-            return flag[indx][rev_idx]
+        return flag[indx] if assume_unique else flag[indx][rev_idx]
 
 def invert_indices(arr, axis=-1):
     """Invert an index array

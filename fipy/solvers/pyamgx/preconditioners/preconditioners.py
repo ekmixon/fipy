@@ -16,11 +16,7 @@ __all__ = [text_to_native_str(n) for n in __all__]
 
 class Preconditioner(object):
     def __init__(self, preconditioner_type, **kwargs):
-        self.config_dict = {
-            "solver": preconditioner_type,
-            "max_iters": 1
-        }
-        self.config_dict.update(kwargs)
+        self.config_dict = {"solver": preconditioner_type, "max_iters": 1} | kwargs
     def __call__(self, **kwargs):
         """
         Parameters

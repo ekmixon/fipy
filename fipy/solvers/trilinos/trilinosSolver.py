@@ -102,16 +102,15 @@ class TrilinosSolver(Solver):
     def _calcResidualVector(self, residualFn=None):
         if residualFn is not None:
             return residualFn(self.var, self.matrix, self.RHSvector)
-        else:
-            residual, globalMatrix = self._calcResidualVectorNonOverlapping_()
+        residual, globalMatrix = self._calcResidualVectorNonOverlapping_()
 
-            overlappingResidual = Epetra.Vector(globalMatrix.colMap)
-            overlappingResidual.Import(residual,
-                                       Epetra.Import(globalMatrix.colMap,
-                                                     globalMatrix.domainMap),
-                                       Epetra.Insert)
+        overlappingResidual = Epetra.Vector(globalMatrix.colMap)
+        overlappingResidual.Import(residual,
+                                   Epetra.Import(globalMatrix.colMap,
+                                                 globalMatrix.domainMap),
+                                   Epetra.Insert)
 
-            return overlappingResidual
+        return overlappingResidual
 
     def _calcResidualVectorNonOverlapping_(self):
         globalMatrix, nonOverlappingVector, nonOverlappingRHSvector, overlappingVector = self._globalMatrixAndVectors
@@ -126,10 +125,9 @@ class TrilinosSolver(Solver):
     def _calcResidual(self, residualFn=None):
         if residualFn is not None:
             return residualFn(self.var, self.matrix, self.RHSvector)
-        else:
-            comm = self.var.mesh.communicator
-            residual, globalMatrix = self._calcResidualVectorNonOverlapping_()
-            return comm.Norm2(residual)
+        comm = self.var.mesh.communicator
+        residual, globalMatrix = self._calcResidualVectorNonOverlapping_()
+        return comm.Norm2(residual)
 
     def _calcRHSNorm(self):
         return self.nonOverlappingRHSvector.Norm2()

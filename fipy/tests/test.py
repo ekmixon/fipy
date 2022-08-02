@@ -16,7 +16,7 @@ def _nativize_all(t):
             s = text_to_native_str(s)
         return s
 
-    return tuple([_nativize(s) for s in t])
+    return tuple(_nativize(s) for s in t)
 
 class DeprecationErroringTestProgram(unittest.TestProgram):
     """`TestProgram` that overrides inability of standard
@@ -167,7 +167,7 @@ class test(_test):
                 versions.append('not installed')
 
             except Exception as e:
-                versions.append('version check failed: {}'.format(e))
+                versions.append(f'version check failed: {e}')
 
         ## PyTrilinos
         packages.append('PyTrilinos')
@@ -177,7 +177,7 @@ class test(_test):
         except ImportError as e:
             versions.append('not installed')
         except Exception as e:
-            versions.append('version check failed: {}'.format(e))
+            versions.append(f'version check failed: {e}')
 
         ## Mayavi uses a non-standard approach for storing its version number.
         packages.append('mayavi')
@@ -191,7 +191,7 @@ class test(_test):
             except ImportError as e:
                 versions.append('not installed')
         except Exception as e:
-            versions.append('version check failed: {}'.format(e))
+            versions.append(f'version check failed: {e}')
 
         ## Gmsh version
         packages.append('gmsh')
@@ -203,7 +203,7 @@ class test(_test):
             else:
                 versions.append(gmshversion)
         except Exception as e:
-            versions.append('version check failed: {}'.format(e))
+            versions.append(f'version check failed: {e}')
 
         packages.append("solver")
         try:
@@ -271,7 +271,7 @@ class test(_test):
         self.printPackageInfo()
 
         from pkg_resources import EntryPoint
-        loader_ep = EntryPoint.parse("x="+self.test_loader)
+        loader_ep = EntryPoint.parse(f"x={self.test_loader}")
         loader_class = loader_ep.load(require=False)
 
         from fipy.tools import numerix
@@ -293,9 +293,7 @@ class test(_test):
             # unittest.main(..., exit=...) not available until Python 2.7
             from fipy.tests.doctestPlus import report_skips
             report_skips()
-            if self.timetests is not None:
-                pass
-            else:
+            if self.timetests is None:
                 raise
 
         if "legacy" in printoptions:

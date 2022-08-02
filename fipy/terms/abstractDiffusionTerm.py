@@ -69,8 +69,7 @@ class _AbstractDiffusionTerm(_UnaryTerm):
         lowerOrderBCs = []
 
         for bc in boundaryConditions:
-            bcDeriv = bc._getDerivative(self.order - 2)
-            if bcDeriv:
+            if bcDeriv := bc._getDerivative(self.order - 2):
                 higherOrderBCs.append(bcDeriv)
             else:
                 lowerOrderBCs.append(bc)
@@ -110,62 +109,56 @@ class _AbstractDiffusionTerm(_UnaryTerm):
 
     def __calcAnisotropySource(self, coeff, mesh, var):
 
-        if not hasattr(self, 'anisotropySource'):
-            if len(coeff) > 1:
-                unconstrainedVar = var + 0
-                gradients = unconstrainedVar.grad.harmonicFaceValue.dot(self.__getRotationTensor(mesh))
-                from fipy.variables.addOverFacesVariable import _AddOverFacesVariable
-                self.anisotropySource = _AddOverFacesVariable(gradients[1:].dot(coeff[1:])) * mesh.cellVolumes
+        if not hasattr(self, 'anisotropySource') and len(coeff) > 1:
+            unconstrainedVar = var + 0
+            gradients = unconstrainedVar.grad.harmonicFaceValue.dot(self.__getRotationTensor(mesh))
+            from fipy.variables.addOverFacesVariable import _AddOverFacesVariable
+            self.anisotropySource = _AddOverFacesVariable(gradients[1:].dot(coeff[1:])) * mesh.cellVolumes
 
     def _calcGeomCoeff(self, var):
 
         mesh = var.mesh
-        if self.nthCoeff is not None:
+        if self.nthCoeff is None:
+            return None
+        coeff = self.nthCoeff
 
-            coeff = self.nthCoeff
+        shape = numerix.getShape(coeff)
 
-            shape = numerix.getShape(coeff)
+        rank = coeff.rank if isinstance(coeff, FaceVariable) else len(shape)
+        if var.rank == 0:
+            anisotropicRank = rank
+        elif var.rank == 1:
+            anisotropicRank = rank - 2
+        else:
+            raise IndexError('the solution variable has the wrong rank')
 
-            if isinstance(coeff, FaceVariable):
-                rank = coeff.rank
-            else:
-                rank = len(shape)
+        if anisotropicRank == 0 and self._treatMeshAsOrthogonal(mesh):
 
-            if var.rank == 0:
-                anisotropicRank = rank
-            elif var.rank == 1:
-                anisotropicRank = rank - 2
-            else:
-                raise IndexError('the solution variable has the wrong rank')
+            if coeff.shape != () and not isinstance(coeff, FaceVariable):
+                coeff = coeff[..., numerix.newaxis]
 
-            if anisotropicRank == 0 and self._treatMeshAsOrthogonal(mesh):
+            return (
+                coeff
+                * FaceVariable(mesh=mesh, value=mesh._faceAreas)
+                / mesh._cellDistances
+            )[numerix.newaxis, :]
 
-                if coeff.shape != () and not isinstance(coeff, FaceVariable):
-                    coeff = coeff[..., numerix.newaxis]
-
-                tmpBop = (coeff * FaceVariable(mesh=mesh, value=mesh._faceAreas) / mesh._cellDistances)[numerix.newaxis,:]
-
-            else:
-
-                if anisotropicRank == 1 or anisotropicRank == 0:
-                    coeff = coeff * numerix.identity(mesh.dim)
-
-                if anisotropicRank > 0:
-                    shape = numerix.getShape(coeff)
-                    if mesh.dim != shape[0] or mesh.dim != shape[1]:
-                        raise IndexError('diffusion coefficient tensor is not an appropriate shape for this mesh')
-
-                faceNormals = FaceVariable(mesh=mesh, rank=1, value=mesh.faceNormals)
-                rotationTensor = self.__getRotationTensor(mesh)
-                rotationTensor[:, 0] = rotationTensor[:, 0] / mesh._cellDistances
-
-                tmpBop = faceNormals.dot(coeff).dot(rotationTensor) * mesh._faceAreas
-
-            return tmpBop
 
         else:
 
-            return None
+            if anisotropicRank in [1, 0]:
+                coeff = coeff * numerix.identity(mesh.dim)
+
+            if anisotropicRank > 0:
+                shape = numerix.getShape(coeff)
+                if mesh.dim != shape[0] or mesh.dim != shape[1]:
+                    raise IndexError('diffusion coefficient tensor is not an appropriate shape for this mesh')
+
+            faceNormals = FaceVariable(mesh=mesh, rank=1, value=mesh.faceNormals)
+            rotationTensor = self.__getRotationTensor(mesh)
+            rotationTensor[:, 0] = rotationTensor[:, 0] / mesh._cellDistances
+
+            return faceNormals.dot(coeff).dot(rotationTensor) * mesh._faceAreas
 
     def _getCoefficientMatrixForTests(self, SparseMatrix, var, coeff):
         """
@@ -239,7 +232,8 @@ class _AbstractDiffusionTerm(_UnaryTerm):
         for boundaryCondition in higherOrderBCs:
             LL, bb = boundaryCondition._buildMatrix(SparseMatrix, N, M, coeffs)
             if 'FIPY_DISPLAY_MATRIX' in os.environ:
-                self._viewer.title = r"%s %s" % (boundaryCondition.__class__.__name__, self.__class__.__name__)
+                self._viewer.title = f"{boundaryCondition.__class__.__name__} {self.__class__.__name__}"
+
                 self._viewer.plot(matrix=LL, RHSvector=bb)
                 from fipy import input
                 input()
@@ -310,7 +304,7 @@ class _AbstractDiffusionTerm(_UnaryTerm):
                 self.constraintB = -(var.faceGrad.constraintMask * nthCoeffFaceGrad).divergence * mesh.cellVolumes
 
                 constrainedNormalsDotCoeffOverdAP = var.arithmeticFaceValue.constraintMask * \
-                                                    normalsNthCoeff / mesh._cellDistances
+                                                        normalsNthCoeff / mesh._cellDistances
 
                 self.constraintB -= (constrainedNormalsDotCoeffOverdAP * var.arithmeticFaceValue).divergence * mesh.cellVolumes
 
@@ -423,10 +417,7 @@ class _AbstractDiffusionTerm(_UnaryTerm):
         return (var, L, b)
 
     def _getDiffusionGeomCoeff(self, var):
-        if var is self.var or self.var is None:
-            return self._getGeomCoeff(var)
-        else:
-            return None
+        return self._getGeomCoeff(var) if var is self.var or self.var is None else None
 
     @property
     def _diffusionVars(self):

@@ -54,7 +54,12 @@ class SkewedGrid2D(Mesh2D):
         changedVertices = numerix.zeros(vertices.shape, 'd')
 
         for i in range(len(vertices[0])):
-            if((i % (nx+1)) != 0 and (i % (nx+1)) != nx and (i // nx + 1) != 0 and (i // nx + 1) != ny):
+            if (
+                (i % (nx + 1)) != 0
+                and (i % (nx + 1)) != nx
+                and i // nx != -1
+                and (i // nx + 1) != ny
+            ):
                 changedVertices[0, i] = vertices[0, i] + (rand * ((random.random() * 2) - 1))
                 changedVertices[1, i] = vertices[1, i] + (rand * ((random.random() * 2) - 1))
             else:

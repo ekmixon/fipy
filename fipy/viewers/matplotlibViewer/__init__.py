@@ -108,7 +108,7 @@ def MatplotlibViewer(vars, title=None, limits={}, cmap=None, colorbar='vertical'
     if type(vars) not in [type([]), type(())]:
         vars = [vars]
 
-    kwlimits.update(limits)
+    kwlimits |= limits
 
     from fipy.viewers import MeshDimensionError
     from fipy.viewers.matplotlibViewer import (Matplotlib1DViewer,

@@ -364,10 +364,6 @@ def runLeveler(kLeveler=0.018,
     if displayViewers:
         try:
             raise Exception
-            from .mayaviSurfactantViewer import MayaviSurfactantViewer
-            viewers = (
-                MayaviSurfactantViewer(distanceVar, acceleratorVar.interfaceVar, zoomFactor = 1e6, datamax=0.5, datamin=0.0, smooth = 1, title = 'accelerator coverage'),
-                MayaviSurfactantViewer(distanceVar, levelerVar.interfaceVar, zoomFactor = 1e6, datamax=0.5, datamin=0.0, smooth = 1, title = 'leveler coverage'))
         except:
             class PlotVariable(CellVariable):
                 def __init__(self, var = None, name = ''):
@@ -383,10 +379,9 @@ def runLeveler(kLeveler=0.018,
 
     for step in range(numberOfSteps):
 
-        if displayViewers:
-            if step % displayRate == 0:
-                for viewer in viewers:
-                    viewer.plot()
+        if displayViewers and step % displayRate == 0:
+            for viewer in viewers:
+                viewer.plot()
 
         if step % levelSetUpdateFrequency == 0:
             distanceVar.calcDistanceFunction()

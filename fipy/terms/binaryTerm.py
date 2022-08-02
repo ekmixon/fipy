@@ -49,7 +49,7 @@ class _BinaryTerm(_AbstractBinaryTerm):
         return solver
 
     def __repr__(self):
-        return '(' + repr(self.term) + ' + ' + repr(self.other) + ')'
+        return f'({repr(self.term)} + {repr(self.other)})'
 
     def __mul__(self, other):
         return other * self.term + other * self.other

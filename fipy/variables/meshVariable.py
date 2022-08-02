@@ -67,7 +67,6 @@ class _MeshVariable(Variable):
 
                 elementshape = value.shape[:-1]
                 array = None
-
 #             value = value._copyValue()
 
         if elementshape is None:
@@ -92,7 +91,7 @@ class _MeshVariable(Variable):
 
         self.elementshape = elementshape
 
-        if not "array" in locals():
+        if "array" not in locals():
             if numerix._isPhysical(value):
                 dtype = numerix.obj2sctype(value.value)
             else:
@@ -115,28 +114,30 @@ class _MeshVariable(Variable):
             if not isinstance(value, Variable):
                 value = _Constant(value)
             valueShape = value.shape
-            if valueShape is not () and valueShape[-1] == self._globalNumberOfElements:
-                if valueShape[-1] != 0:
-                    # workaround for NumPy:ticket:1171
-                    value = value[..., self._globalOverlappingIDs]
+            if (
+                valueShape is not ()
+                and valueShape[-1] == self._globalNumberOfElements
+                and valueShape[-1] != 0
+            ):
+                # workaround for NumPy:ticket:1171
+                value = value[..., self._globalOverlappingIDs]
 
             value = value.value
         return value
 
     def _getGlobalValue(self, localIDs, globalIDs):
         localValue = self.value
-        if self.mesh.communicator.Nproc > 1:
-            if localValue.shape[-1] != 0:
-                localValue = localValue[..., localIDs]
-            globalIDs = numerix.concatenate(self.mesh.communicator.allgather(globalIDs))
-
-            globalValue = numerix.empty(localValue.shape[:-1] + (max(globalIDs) + 1,),
-                                        dtype=numerix.obj2sctype(localValue))
-            globalValue[..., globalIDs] = numerix.concatenate(self.mesh.communicator.allgather(localValue), axis=-1)
-
-            return globalValue
-        else:
+        if self.mesh.communicator.Nproc <= 1:
             return localValue
+        if localValue.shape[-1] != 0:
+            localValue = localValue[..., localIDs]
+        globalIDs = numerix.concatenate(self.mesh.communicator.allgather(globalIDs))
+
+        globalValue = numerix.empty(localValue.shape[:-1] + (max(globalIDs) + 1,),
+                                    dtype=numerix.obj2sctype(localValue))
+        globalValue[..., globalIDs] = numerix.concatenate(self.mesh.communicator.allgather(localValue), axis=-1)
+
+        return globalValue
 
     def __str__(self):
         return str(self.globalValue)
@@ -144,13 +145,12 @@ class _MeshVariable(Variable):
     def __repr__(self):
         if hasattr(self, 'name') and len(self.name) > 0:
             return self.name
-        else:
-            s = self.__class__.__name__ + '('
-            s += 'value=' + repr(self.globalValue)
-            s += ')'
-            if len(self.name) == 0:
-                s = s[:-1] + ', mesh=' + repr(self.mesh) + s[-1]
-            return s
+        s = f'{self.__class__.__name__}('
+        s += f'value={repr(self.globalValue)}'
+        s += ')'
+        if len(self.name) == 0:
+            s = f'{s[:-1]}, mesh={repr(self.mesh)}{s[-1]}'
+        return s
 
     @property
     def constraintMask(self):
@@ -195,7 +195,7 @@ class _MeshVariable(Variable):
         if hasattr(self, '_constraintMask'):
             self._constraintMask._requires(self._constraints[-1].where)
 
-    def _getShapeFromMesh(mesh):
+    def _getShapeFromMesh(self):
         """
         Return the shape of this `MeshVariable` type, given a particular mesh.
         Return `None` if unknown or independent of the mesh.
@@ -233,7 +233,7 @@ class _MeshVariable(Variable):
                 or (self.elementshape + self._getShapeFromMesh(self.mesh))
                 or ())
 
-    def _dot(a, b, index):
+    def _dot(self, b, index):
         """
         Workhorse method to calculate the scalar product
 
@@ -245,16 +245,16 @@ class _MeshVariable(Variable):
         arbitrary rank, but at this point, both must be appropriately broadcast
         `array` objects.
         """
-        rankA = len(a.shape) - 1
+        rankA = len(self.shape) - 1
         rankB = len(b.shape) - 1
         if rankA <= 0 or rankB <= 0:
             # if either a or b is scalar, then just do multiplication
-            return a[index] * b
+            return self[index] * b
         else:
-            return numerix.sum(a[index] * b, axis=rankA - 1)
+            return numerix.sum(self[index] * b, axis=rankA - 1)
     _dot = staticmethod(_dot)
 
-    def __dot(A, B, operatorClass):
+    def __dot(self, B, operatorClass):
         """
         Workhorse method to return a `_BinaryOperatorVariable` that will
         dynamically perform the mesh-element--by--mesh-element (cell-by-cell,
@@ -298,21 +298,23 @@ class _MeshVariable(Variable):
         True
 
         """
-        rankA = len(A.shape) - 1
+        rankA = len(self.shape) - 1
         rankB = len(B.shape) - 1
 
         index = (numerix.index_exp[...] + (numerix.newaxis,) * (rankB - 1)
                  + numerix.index_exp[:])
-        opShape = numerix._broadcastShape(A[index].shape, B.shape)
+        opShape = numerix._broadcastShape(self[index].shape, B.shape)
 
         if rankA > 0 and rankB > (rankA - 1):
             opShape = opShape[:rankA-1] + opShape[rankA:]
 
-        return A._BinaryOperatorVariable(lambda a, b: _MeshVariable._dot(a, b, index),
-                                         B,
-                                         opShape=opShape,
-                                         operatorClass=operatorClass,
-                                         canInline=False)
+        return self._BinaryOperatorVariable(
+            lambda a, b: _MeshVariable._dot(a, b, index),
+            B,
+            opShape=opShape,
+            operatorClass=operatorClass,
+            canInline=False,
+        )
     __dot = staticmethod(__dot)
 
     def dot(self, other, opShape=None, operatorClass=None):
@@ -357,11 +359,7 @@ class _MeshVariable(Variable):
         a = a[..., self._localNonOverlappingIDs]
 
         if numerix.multiply.reduce(a.shape) == 0:
-            if axis is None:
-                opShape = ()
-            else:
-                opShape=self.shape[:axis] + self.shape[axis+1:]
-
+            opShape = () if axis is None else self.shape[:axis] + self.shape[axis+1:]
             if len(opShape) == 0:
                 nodeVal = default
             else:
@@ -524,9 +522,12 @@ class _MeshVariable(Variable):
             and otherShape[-1] == self._globalNumberOfElements):
             if (isinstance(other, Variable) and len(other.requiredVariables) > 0):
                 import warnings
-                warnings.warn("The expression `%s` has been cast to a constant `%s`"
-                              % (repr(other), self._variableClass.__name__),
-                              UserWarning, stacklevel=4)
+                warnings.warn(
+                    f"The expression `{repr(other)}` has been cast to a constant `{self._variableClass.__name__}`",
+                    UserWarning,
+                    stacklevel=4,
+                )
+
             other = self._variableClass(value=other, mesh=self.mesh)
 
         newOpShape, baseClass, newOther = Variable._shapeClassAndOther(self, opShape, operatorClass, other)
@@ -595,10 +596,7 @@ class _MeshVariable(Variable):
 
     def _getitemClass(self, index):
         if not isinstance(index, tuple):
-            if isinstance(index, list):
-                index = tuple(index)
-            else:
-                index = (index,)
+            index = tuple(index) if isinstance(index, list) else (index, )
         indexshape = numerix._indexShape(index=index, arrayShape=self.shape)
         if (len(indexshape) > 0
             and indexshape[-1] == self.shape[-1]

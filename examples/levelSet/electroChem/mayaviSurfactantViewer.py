@@ -74,7 +74,7 @@ class MayaviSurfactantViewer(AbstractViewer):
             (default) value of `None` will autoscale.
         """
 
-        kwlimits.update(limits)
+        kwlimits |= limits
         AbstractViewer.__init__(self, vars=[], title=title, **kwlimits)
         import mayavi
         self._viewer = mayavi.mayavi()
@@ -118,18 +118,14 @@ class MayaviSurfactantViewer(AbstractViewer):
         data = numerix.concatenate((data, data))
 
         tmpIDs = numerix.nonzero(data > 0.0001)[0]
-        if len(tmpIDs) > 0:
-            val = numerix.take(data, tmpIDs).min()
-        else:
-            val = 0.0001
-
+        val = numerix.take(data, tmpIDs).min() if len(tmpIDs) > 0 else 0.0001
         data = numerix.where(data < 0.0001,
                              val,
                              data)
 
         for line in lines:
             if len(line) > 2:
-                for smooth in range(self.smooth):
+                for _ in range(self.smooth):
                     for arr in (coordinates, data):
                         tmp = numerix.take(arr, line)
                         tmp[1:-1] = tmp[2:] * 0.25 + tmp[:-2] * 0.25 + tmp[1:-1] * 0.5

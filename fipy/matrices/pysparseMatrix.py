@@ -68,10 +68,9 @@ class _PysparseMatrix(_SparseMatrix):
 
         if other == 0:
             return self
-        else:
-            L = self.matrix.copy()
-            L.shift(1, other.matrix)
-            return _PysparseMatrix(matrix=L)
+        L = self.matrix.copy()
+        L.shift(1, other.matrix)
+        return _PysparseMatrix(matrix=L)
 
     __radd__ = __add__
 
@@ -79,10 +78,9 @@ class _PysparseMatrix(_SparseMatrix):
 
         if other == 0:
             return self
-        else:
-            L = self.matrix.copy()
-            L.shift(-1, other.matrix)
-            return _PysparseMatrix(matrix=L)
+        L = self.matrix.copy()
+        L.shift(-1, other.matrix)
+        return _PysparseMatrix(matrix=L)
 
     def __rsub__(self, other):
         return -self + other
@@ -125,26 +123,24 @@ class _PysparseMatrix(_SparseMatrix):
 
         if isinstance(other, _PysparseMatrix):
             return _PysparseMatrix(matrix=spmatrix.matrixmultiply(self.matrix, other.matrix))
-        else:
-            shape = numerix.shape(other)
-            if shape == ():
-                L = spmatrix.ll_mat(N, N, N)
-                L.put(other * numerix.ones(N, 'l'))
-                return _PysparseMatrix(matrix=spmatrix.matrixmultiply(self.matrix, L))
-            elif shape == (N,):
-                y = numerix.empty((self.matrix.shape[0],))
-                self.matrix.matvec(other, y)
-                return y
-            else:
-                raise TypeError
-
-    def __rmul__(self, other):
-        if isinstance(numerix.ones(1, 'l'), type(other)):
-            y = other.copy()
-            self.matrix.matvec_transp(other, y)
+        shape = numerix.shape(other)
+        if shape == ():
+            L = spmatrix.ll_mat(N, N, N)
+            L.put(other * numerix.ones(N, 'l'))
+            return _PysparseMatrix(matrix=spmatrix.matrixmultiply(self.matrix, L))
+        elif shape == (N,):
+            y = numerix.empty((self.matrix.shape[0],))
+            self.matrix.matvec(other, y)
             return y
         else:
+            raise TypeError
+
+    def __rmul__(self, other):
+        if not isinstance(numerix.ones(1, 'l'), type(other)):
             return self * other
+        y = other.copy()
+        self.matrix.matvec_transp(other, y)
+        return y
 
     @property
     def _shape(self):
@@ -339,8 +335,8 @@ class _PysparseMatrix(_SparseMatrix):
          [2.5 2.2 --]]
         """
         nrows, _ = self.matrix.shape
-        rows = [[] for i in range(nrows)]
-        data = [[] for i in range(nrows)]
+        rows = [[] for _ in range(nrows)]
+        data = [[] for _ in range(nrows)]
         for (row, col), datum in self.matrix.items():
             rows[row].append(col)
             data[row].append(datum)

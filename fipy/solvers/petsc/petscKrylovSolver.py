@@ -47,7 +47,7 @@ class PETScKrylovSolver(PETScSolver):
         """
         if self.__class__ is PETScKrylovSolver:
             raise NotImplementedError("can't instantiate abstract base class")
-            
+
         PETScSolver.__init__(self, tolerance=tolerance,
                              iterations=iterations, precon=precon)
 
@@ -69,7 +69,7 @@ class PETScKrylovSolver(PETScSolver):
 #             b.view()
             PRINT('solver:', ksp.type)
             PRINT('precon:', ksp.getPC().type)
-            PRINT('convergence: %s' % _reason[ksp.reason])
+            PRINT(f'convergence: {_reason[ksp.reason]}')
             PRINT('iterations: %d / %d' % (ksp.its, self.iterations))
             PRINT('norm:', ksp.norm)
             PRINT('norm_type:', ksp.norm_type)

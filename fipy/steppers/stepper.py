@@ -10,19 +10,19 @@ class Stepper(object):
     def __init__(self, vardata=()):
         self.vardata = vardata
 
-    def sweepFn(vardata, dt, *args, **kwargs):
+    def sweepFn(self, dt, *args, **kwargs):
         residual = 0
-        for var, eqn, bcs in vardata:
+        for var, eqn, bcs in self:
             residual = max(residual, eqn.sweep(var=var, dt=dt, boundaryConditions=bcs))
 
         return residual
     sweepFn = staticmethod(sweepFn)
 
-    def successFn(vardata, dt, dtPrev, elapsed, *args, **kwargs):
+    def successFn(self, dt, dtPrev, elapsed, *args, **kwargs):
         pass
     successFn = staticmethod(successFn)
 
-    def failFn(vardata, dt, *args, **kwargs):
+    def failFn(self, dt, *args, **kwargs):
         pass
     failFn = staticmethod(failFn)
 

@@ -41,7 +41,6 @@ class TrilinosAztecOOSolver(TrilinosSolver):
 
         Solver = AztecOO.AztecOO(L, x, b)
         Solver.SetAztecOption(AztecOO.AZ_solver, self.solver)
-
 ##        Solver.SetAztecOption(AztecOO.AZ_kspace, 30)
 
         Solver.SetAztecOption(AztecOO.AZ_output, AztecOO.AZ_none)
@@ -53,9 +52,10 @@ class TrilinosAztecOOSolver(TrilinosSolver):
 
         output = Solver.Iterate(self.iterations, self.tolerance)
 
-        if self.preconditioner is not None:
-            if hasattr(self.preconditioner, 'Prec'):
-                del self.preconditioner.Prec
+        if self.preconditioner is not None and hasattr(
+            self.preconditioner, 'Prec'
+        ):
+            del self.preconditioner.Prec
 
         if 'FIPY_VERBOSE_SOLVER' in os.environ:
             status = Solver.GetAztecStatus()

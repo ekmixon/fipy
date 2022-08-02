@@ -70,13 +70,11 @@ class Mesh2D(Mesh):
 
     def _translate(self, vector):
         newCoords = self.vertexCoords + vector
-        newmesh = Mesh2D(newCoords, self.faceVertexIDs, self.cellFaceIDs)
-        return newmesh
+        return Mesh2D(newCoords, self.faceVertexIDs, self.cellFaceIDs)
 
     def __mul__(self, factor):
         newCoords = self.vertexCoords * factor
-        newmesh = Mesh2D(newCoords, self.faceVertexIDs, self.cellFaceIDs)
-        return newmesh
+        return Mesh2D(newCoords, self.faceVertexIDs, self.cellFaceIDs)
 
     def _calcOrderedCellVertexIDs(self):
         from fipy.tools.numerix import take

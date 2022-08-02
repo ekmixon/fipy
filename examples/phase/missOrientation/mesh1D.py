@@ -53,6 +53,7 @@ data and compares it with the ``theta`` variable.
 >>> print(phase.allclose(testData))
 1
 """
+
 from __future__ import division
 from __future__ import unicode_literals
 from builtins import range
@@ -96,7 +97,7 @@ if __name__ == '__main__':
 
    phaseViewer = Viewer(vars = phase)
    phaseViewer.plot()
-   for step in range(steps):
+   for _ in range(steps):
       phaseEq.solve(phase, dt = timeStepDuration)
       phaseViewer.plot()
    input('finished')

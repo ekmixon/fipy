@@ -55,7 +55,7 @@ class TSVViewer(AbstractViewer):
             displayed range of data. Any limit set to
             a (default) value of `None` will autoscale.
         """
-        kwlimits.update(limits)
+        kwlimits |= limits
         AbstractViewer.__init__(self, vars=vars, title=title, **kwlimits)
 
         mesh = self.vars[0].mesh
@@ -71,8 +71,8 @@ class TSVViewer(AbstractViewer):
             # omit any elements whose cell centers lie outside of the specified limits
             skip = False
             for axis in range(dim):
-                mini = self._getLimit("%smin" % self._axis[axis])
-                maxi = self._getLimit("%smax" % self._axis[axis])
+                mini = self._getLimit(f"{self._axis[axis]}min")
+                maxi = self._getLimit(f"{self._axis[axis]}max")
 
                 if (mini and lineValues[axis] < mini) or (maxi and lineValues[axis] > maxi):
                     skip = True
@@ -151,9 +151,9 @@ class TSVViewer(AbstractViewer):
 
         for var in self.vars:
             name = var.name
-            if (isinstance(var, CellVariable) or isinstance(var, FaceVariable)) and var.rank == 1:
+            if isinstance(var, (CellVariable, FaceVariable)) and var.rank == 1:
                 for index in range(dim):
-                    headings.extend(["%s_%s" % (name, self._axis[index])])
+                    headings.extend([f"{name}_{self._axis[index]}"])
             else:
                 headings.extend([name])
 
@@ -163,7 +163,7 @@ class TSVViewer(AbstractViewer):
         cellVars = [var for var in self.vars if isinstance(var, CellVariable)]
         faceVars = [var for var in self.vars if isinstance(var, FaceVariable)]
 
-        if len(cellVars) > 0:
+        if cellVars:
             values = mesh.cellCenters.globalValue
             for var in self.vars:
                 if isinstance(var, CellVariable) and var.rank == 1:
@@ -173,7 +173,7 @@ class TSVViewer(AbstractViewer):
 
             self._plot(values, f, dim)
 
-        if len(faceVars) > 0:
+        if faceVars:
             values = mesh.faceCenters.globalValue
             for var in self.vars:
                 if isinstance(var, FaceVariable) and var.rank == 1:

@@ -47,13 +47,19 @@ class Mesh1D(Mesh):
 
     def _translate(self, vector):
         newCoords = self.vertexCoords + vector
-        newmesh = Mesh1D(newCoords, numerix.array(self.faceVertexIDs), numerix.array(self.cellFaceIDs))
-        return newmesh
+        return Mesh1D(
+            newCoords,
+            numerix.array(self.faceVertexIDs),
+            numerix.array(self.cellFaceIDs),
+        )
 
     def __mul__(self, factor):
         newCoords = self.vertexCoords * factor
-        newmesh = Mesh1D(newCoords, numerix.array(self.faceVertexIDs), numerix.array(self.cellFaceIDs))
-        return newmesh
+        return Mesh1D(
+            newCoords,
+            numerix.array(self.faceVertexIDs),
+            numerix.array(self.cellFaceIDs),
+        )
 
     @property
     def _VTKCellType(self):

@@ -23,4 +23,4 @@ class _MeshRepresentation(_AbstractRepresentation):
         Mesh.__init__(mesh, **state)
 
     def repr(self):
-        return "%s()" % self.mesh.__class__.__name__
+        return f"{self.mesh.__class__.__name__}()"

@@ -20,8 +20,8 @@ class _HybridConvectionTermAlpha(FaceVariable):
         P  = self.P
 
         alpha = numerix.where(                                 P > 2., (P - 1) / P,    0.)
-        alpha = numerix.where( numerix.logical_and(2. >= P, P >= -2.),         0.5, alpha)
-        alpha = numerix.where(                               -2. >  P,      -1 / P, alpha)
+        alpha = numerix.where(numerix.logical_and(P <= 2., P >= -2.), 0.5, alpha)
+        alpha = numerix.where(P < -2., -1 / P, alpha)
 
         return alpha
 

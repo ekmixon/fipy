@@ -22,10 +22,7 @@ class _SparseMatrix(object):
     __array_priority__ = 100.0
 
     def __array_wrap(self, arr, context=None):
-        if context is None:
-            return arr
-        else:
-            return NotImplemented
+        return arr if context is None else NotImplemented
 
     def copy(self):
         raise NotImplementedError

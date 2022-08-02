@@ -71,7 +71,7 @@ class _NOXInterface(NOX.Epetra.Interface.Required, NOX.Epetra.Interface.Jacobian
 
         except Exception as e:
             print("TrilinosNonlinearSolver.computeJacobian() has thrown an exception:")
-            print(str(type(e))[18:-2] + ":", e)
+            print(f"{str(type(e))[18:-2]}:", e)
             return False
 
 
@@ -91,7 +91,7 @@ class _NOXInterface(NOX.Epetra.Interface.Required, NOX.Epetra.Interface.Jacobian
 
         except Exception as e:
             print("TrilinosNonlinearSolver.computeF() has thrown an exception:")
-            print(str(type(e))[18:-2] + ":", e)
+            print(f"{str(type(e))[18:-2]}:", e)
             return False
 
 class _DummyJacobianSolver(TrilinosSolver):
@@ -133,8 +133,6 @@ class TrilinosNonlinearSolver(TrilinosSolver):
         self.nox = _NOXInterface(solver=self)
 
     def solve(self, dt=None):
-        output = self.nox.solve(dt=dt)
-
 #         if 'FIPY_VERBOSE_SOLVER' in os.environ:
 #             status = Solver.GetAztecStatus()
 #
@@ -155,4 +153,4 @@ class TrilinosNonlinearSolver(TrilinosSolver):
 #             PRINT('AztecOO.AZ_solve_time:',status[AztecOO.AZ_solve_time])
 #             PRINT('AztecOO.AZ_Aztec_version:',status[AztecOO.AZ_Aztec_version])
 
-        return output
+        return self.nox.solve(dt=dt)

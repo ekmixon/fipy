@@ -15,7 +15,7 @@ _desired_solver = _parseSolver()
 if _desired_solver is None and 'FIPY_SOLVERS' in os.environ:
     _desired_solver = os.environ['FIPY_SOLVERS'].lower()
 del os
-    
+
 try:
     from mpi4py import MPI
     _Nproc = MPI.COMM_WORLD.size
@@ -34,8 +34,8 @@ _exceptions = {}
 def _import_matrix(suite, kind):
     """`from fipy.matrices.suiteMatrix import _SuiteKindMatrix`
     """
-    m = import_module("fipy.matrices.{}Matrix".format(suite.lower()))
-    return getattr(m, "_{}{}Matrix".format(suite, kind))
+    m = import_module(f"fipy.matrices.{suite.lower()}Matrix")
+    return getattr(m, f"_{suite}{kind}Matrix")
 
 def _import_mesh_matrices(suite):
     """Import row, column, and general mesh matrices from `suite`
@@ -88,7 +88,7 @@ if solver is None and _desired_solver in ["trilinos", "no-pysparse", None]:
     try:
         from fipy.solvers.trilinos import *
         __all__.extend(trilinos.__all__)
-        
+
         from fipy.solvers.trilinos.comms.serialEpetraCommWrapper import SerialEpetraCommWrapper
         serialComm = SerialEpetraCommWrapper()
 
@@ -104,7 +104,7 @@ if solver is None and _desired_solver in ["trilinos", "no-pysparse", None]:
                 solver = "trilinos"
             except ImportError:
                 pass
-                
+
         if solver is None:
             # no-pysparse requested or pysparseMatrix failed to import
             _mesh_matrices = _import_mesh_matrices(suite="Trilinos")
@@ -147,12 +147,14 @@ if solver is None and _desired_solver in ["pyamgx", None]:
 
 if solver is None:
     if _desired_solver is None:
-        raise ImportError('Unable to load a solver: %s' % str(_exceptions))
+        raise ImportError(f'Unable to load a solver: {str(_exceptions)}')
+    if len(_exceptions) > 0:
+        raise ImportError(
+            f'Unable to load solver {_desired_solver}: {_exceptions[_desired_solver]}'
+        )
+
     else:
-        if len(_exceptions) > 0:
-            raise ImportError('Unable to load solver %s: %s' % (_desired_solver, _exceptions[_desired_solver]))
-        else:
-            raise ImportError('Unknown solver package %s' % _desired_solver)
+        raise ImportError(f'Unknown solver package {_desired_solver}')
 
 # don't unpack until here in order to keep code above more succinct
 _RowMeshMatrix, _ColMeshMatrix, _MeshMatrix = _mesh_matrices

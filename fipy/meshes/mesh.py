@@ -168,7 +168,7 @@ class Mesh(AbstractMesh):
             faceVertexCoordsMask = numerix.zeros(numerix.shape(faceVertexCoords), 'l')
         else:
             faceVertexCoordsMask = \
-              numerix.repeat(MA.getmaskarray(self.faceVertexIDs)[numerix.newaxis, ...],
+                  numerix.repeat(MA.getmaskarray(self.faceVertexIDs)[numerix.newaxis, ...],
                              self.dim, axis=0)
 
         faceVertexCoords = MA.array(data=faceVertexCoords, mask=faceVertexCoordsMask)
@@ -395,10 +395,11 @@ class Mesh(AbstractMesh):
             ValueError: shape mismatch: objects cannot be broadcast to a single shape
         """
         newCoords = self.vertexCoords * factor
-        newmesh = Mesh(vertexCoords=newCoords,
-                       faceVertexIDs=numerix.array(self.faceVertexIDs),
-                       cellFaceIDs=numerix.array(self.cellFaceIDs))
-        return newmesh
+        return Mesh(
+            vertexCoords=newCoords,
+            faceVertexIDs=numerix.array(self.faceVertexIDs),
+            cellFaceIDs=numerix.array(self.cellFaceIDs),
+        )
 
     __rmul__ = __mul__
 
@@ -408,8 +409,11 @@ class Mesh(AbstractMesh):
 
     def _translate(self, vector):
         newCoords = self.vertexCoords + vector
-        newmesh = Mesh(newCoords, numerix.array(self.faceVertexIDs), numerix.array(self.cellFaceIDs))
-        return newmesh
+        return Mesh(
+            newCoords,
+            numerix.array(self.faceVertexIDs),
+            numerix.array(self.cellFaceIDs),
+        )
 
     def _handleFaceConnection(self):
         """

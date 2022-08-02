@@ -31,12 +31,8 @@ class _UnaryTerm(Term):
            __UnaryTerm(coeff=123.456)
 
         """
-        if self.var is None:
-            varString = ''
-        else:
-            varString = ', var=%s' % repr(self.var)
-
-        return "%s(coeff=%s%s)" % (self.__class__.__name__, repr(self.coeff), varString)
+        varString = '' if self.var is None else f', var={repr(self.var)}'
+        return f"{self.__class__.__name__}(coeff={repr(self.coeff)}{varString})"
 
     @property
     def _buildExplcitIfOther(self):
@@ -80,9 +76,9 @@ class _UnaryTerm(Term):
 
         if ('FIPY_DISPLAY_MATRIX' in os.environ
              and "terms" in os.environ['FIPY_DISPLAY_MATRIX'].lower().split()):
-             self._viewer.title = "%s %s" % (var.name, repr(self))
-             self._viewer.plot(matrix=matrix, RHSvector=RHSvector)
-             input()
+            self._viewer.title = f"{var.name} {repr(self)}"
+            self._viewer.plot(matrix=matrix, RHSvector=RHSvector)
+            input()
 
         return (var, matrix, RHSvector)
 
@@ -97,7 +93,7 @@ class _UnaryTerm(Term):
     def _getDefaultSolver(self, var, solver, *args, **kwargs):
         if solver and not solver._canSolveAsymmetric():
             import warnings
-            warnings.warn("%s cannot solve asymmetric matrices" % solver)
+            warnings.warn(f"{solver} cannot solve asymmetric matrices")
         if self._vectorSize(var) > 1:
             from fipy.solvers import DefaultAsymmetricSolver
             return solver or DefaultAsymmetricSolver(*args, **kwargs)

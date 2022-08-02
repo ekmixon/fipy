@@ -117,9 +117,8 @@ class Vitals(Document):
         return self.toprettyxml()
 
     def save(self, fname):
-        f = open(fname, 'w')
-        self.writexml(f, indent="    ", addindent="    ", newl="\n")
-        f.close()
+        with open(fname, 'w') as f:
+            self.writexml(f, indent="    ", addindent="    ", newl="\n")
 
     def appendInfo(self, name, svnpath=None, **kwargs):
         """append some additional information, possibly about a project under a separate svn repository

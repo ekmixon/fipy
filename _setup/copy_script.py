@@ -22,16 +22,20 @@ class copy_script(Command):
         self.To = None
 
     def finalize_options(self):
-        if self.From == None:
+        if self.From is None:
             raise SyntaxError("Please specify a '--From' input script file")
 
-        if self.To == None:
+        if self.To is None:
             raise SyntaxError("Please specify a '--To' output script file")
 
         if os.path.exists(os.path.expanduser(self.To)):
             ans = "junk"
 
-            while (len(ans) > 0) and ("yes".find(ans.lower()) is not 0) and ("no".find(ans.lower()) is not 0):
+            while (
+                ans != ""
+                and "yes".find(ans.lower()) is not 0
+                and "no".find(ans.lower()) is not 0
+            ):
                 ans = input("The file '%s' already exists. Overwrite? [n] "%self.To)
 
             if ans is '':

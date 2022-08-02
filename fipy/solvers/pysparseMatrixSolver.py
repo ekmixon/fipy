@@ -38,8 +38,7 @@ class _PysparseMatrixSolver(Solver):
         """
 
         if self.var.mesh.communicator.Nproc > 1:
-            raise Exception("%ss cannot be used with multiple processors" \
-                            % self.__class__)
+            raise Exception(f"{self.__class__}s cannot be used with multiple processors")
 
         array = self.var.numericValue
         newArr = self._solve_(self.matrix, array, self.RHSvector)

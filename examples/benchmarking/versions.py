@@ -58,9 +58,9 @@ try:
 
     scanf_e = "[-+]?(\d+(\.\d*)?|\d*\.\d+)([eE][-+]?\d+)?"
 
-    reCPU = re.compile("cpu time: (%s) s / step / cell" % scanf_e)
-    reRSZ = re.compile("max resident memory: (%s) B / cell" % scanf_e)
-    reVSZ = re.compile("max virtual memory: (%s) B / cell" % scanf_e)
+    reCPU = re.compile(f"cpu time: ({scanf_e}) s / step / cell")
+    reRSZ = re.compile(f"max resident memory: ({scanf_e}) B / cell")
+    reVSZ = re.compile(f"max virtual memory: ({scanf_e}) B / cell")
 
     for entry in client.log(url,
                             revision_start=revisionStart,

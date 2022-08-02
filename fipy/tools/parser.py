@@ -31,17 +31,12 @@ def parse(larg, action = None, type = None, default = None):
     tmpparser = optparse.OptionParser(option_list = [
         optparse.make_option(sarg, larg, action = action, type = type, dest = 'dest', default = default)],
                                       conflict_handler = 'resolve')
-
 ##    optparse.make_option('-e', '--numberOfElements', action = 'store', type = 'int', dest = 'Nele', default = numberOfElements),
 ##    optparse.make_option('-n', '--numberOfSteps', action = 'store', type = 'int', dest = 'steps', default = numberOfSteps),
 ##    optparse.make_option('-p', '--quiet', action = 'store_true', dest = 'quiet', default = False),
 ##    optparse.make_option('-i', '--inline', action = 'store_true', dest = 'inline', default = False)])
 
-    sysargs = []
-    for arg in sys.argv:
-        if larg in arg:
-            sysargs.append(arg)
-
+    sysargs = [arg for arg in sys.argv if larg in arg]
     (options, args) = tmpparser.parse_args(sysargs)
 
     return options.dest

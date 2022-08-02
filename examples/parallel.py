@@ -3,10 +3,7 @@ from __future__ import unicode_literals
 
 from fipy import parallelComm
 
-titles = []
 results = []
-
-titles.append("mpi4py")
 
 try:
     from mpi4py import MPI
@@ -18,10 +15,8 @@ try:
 except Exception as e:
     results.append(str(e))
 
-    
-    
-titles.append("PyTrilinos")
-   
+
+
 try:
     from PyTrilinos import Epetra
 
@@ -32,9 +27,7 @@ try:
 except Exception as e:
     results.append(str(e))
 
-    
-titles.append("petsc4py")
-   
+
 try:
     from petsc4py import PETSc
 
@@ -45,9 +38,8 @@ try:
 except Exception as e:
     results.append(str(e))
 
-    
-titles.append("FiPy")
 
+titles = ["mpi4py", "PyTrilinos", "petsc4py", "FiPy"]
 try:
     from fipy import Grid1D
 
@@ -59,14 +51,14 @@ try:
 except Exception as e:
     results.append(str(e))
 
-    
-    
+
+
 lengths = [parallelComm.MaxAll(len(s)) for s in results]
 formats = ["{{{0}:^{1}}}".format(i, l) for i, l in enumerate(lengths)]
 
 if parallelComm.procID == 0:
     print("    ".join(formats).format(*titles))
-    
+
 parallelComm.Barrier()
 
 print(" :: ".join(formats).format(*results))

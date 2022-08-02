@@ -29,14 +29,13 @@ def _putAdd(vector, ids, additionVector, mask=False):
                 if not masked:
                     vector.flat[id] += value
 
+    elif len(vector.shape) < len(additionVector.shape):
+        for j in range(vector.shape[0]):
+            for id, value in zip(ids.flat, additionVector[j].flat):
+                vector[j].flat[id] += value
     else:
-        if len(vector.shape) < len(additionVector.shape):
-            for j in range(vector.shape[0]):
-                for id, value in zip(ids.flat, additionVector[j].flat):
-                    vector[j].flat[id] += value
-        else:
-            for id, value in zip(ids.flat, additionVector.flat):
-                vector.flat[id] += value
+        for id, value in zip(ids.flat, additionVector.flat):
+            vector.flat[id] += value
 
 if inline.doInline:
     ## FIXME: inline version doesn't account for all of the conditions that Python

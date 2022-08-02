@@ -38,6 +38,7 @@ The result can be tested with the following code:
 0.00813776069241
 
 """
+
 from __future__ import print_function
 from __future__ import division
 from __future__ import unicode_literals
@@ -96,7 +97,7 @@ if __name__ == '__main__':
 
     print('total surfactant before:', numerix.sum(surfactantVariable * mesh.cellVolumes))
 
-    for step in range(steps):
+    for _ in range(steps):
         distanceVariable.updateOld()
         surfactantEquation.solve(surfactantVariable, dt=1.)
         advectionEquation.solve(distanceVariable, dt = timeStepDuration)

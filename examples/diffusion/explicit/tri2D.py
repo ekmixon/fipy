@@ -30,6 +30,7 @@ The result is again tested in the same way:
     1
 
 """
+
 from __future__ import print_function
 from __future__ import unicode_literals
 
@@ -74,7 +75,7 @@ answer = numerix.array([  0.00000000e+00,  0.00000000e+00,  0.00000000e+00,  0.0
 if __name__ == '__main__':
     steps = 1000
 
-    for step in range(steps):
+    for _ in range(steps):
         eq.solve(var, solver = solver, dt = timeStepDuration)
     print(var)
     viewer = Viewer(vars = var)

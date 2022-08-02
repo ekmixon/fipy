@@ -35,10 +35,7 @@ class CellVariable(_MeshVariable):
         _MeshVariable.__init__(self, mesh=mesh, name=name, value=value,
                                rank=rank, elementshape=elementshape, unit=unit)
 
-        if hasOld:
-            self._old = self.copy()
-        else:
-            self._old = None
+        self._old = self.copy() if hasOld else None
 
     @property
     def _variableClass(self):
@@ -103,10 +100,9 @@ class CellVariable(_MeshVariable):
 
     def copy(self):
 
-        return self._getArithmeticBaseClass()(mesh=self.mesh,
-                                              name=self.name + "_old",
-                                              value=self.value,
-                                              hasOld=False)
+        return self._getArithmeticBaseClass()(
+            mesh=self.mesh, name=f"{self.name}_old", value=self.value, hasOld=False
+        )
 
     @property
     def _globalNumberOfElements(self):
@@ -170,26 +166,23 @@ class CellVariable(_MeshVariable):
             Optional argument if user can calculate own
             nearest cell IDs array, shape should be same as points
         """
-        if points is not None:
+        if points is None:
+            return _MeshVariable.__call__(self)
+        if nearestCellIDs is None:
+            nearestCellIDs = self.mesh._getNearestCellID(points)
 
-            if nearestCellIDs is None:
-                nearestCellIDs = self.mesh._getNearestCellID(points)
+        if order == 0:
+            return self.globalValue[..., nearestCellIDs]
 
-            if order == 0:
-                return self.globalValue[..., nearestCellIDs]
-
-            elif order == 1:
-                ##cellID = self.mesh._getNearestCellID(points)
+        elif order == 1:
+            ##cellID = self.mesh._getNearestCellID(points)
 ##                return self[...,self.mesh._getNearestCellID(points)] + numerix.dot(points - self.mesh.cellCenters[...,cellID], self.grad[...,cellID])
-                return (self.globalValue[..., nearestCellIDs]
-                        + numerix.dot(points - self.mesh.cellCenters.globalValue[..., nearestCellIDs],
-                                      self.grad.globalValue[..., nearestCellIDs]))
-
-            else:
-                raise ValueError('order should be either 0 or 1')
+            return (self.globalValue[..., nearestCellIDs]
+                    + numerix.dot(points - self.mesh.cellCenters.globalValue[..., nearestCellIDs],
+                                  self.grad.globalValue[..., nearestCellIDs]))
 
         else:
-            return _MeshVariable.__call__(self)
+            raise ValueError('order should be either 0 or 1')
 
     @property
     def cellVolumeAverage(self):
@@ -233,7 +226,10 @@ class CellVariable(_MeshVariable):
         """
         if not hasattr(self, '_gaussGrad'):
             from fipy.variables.gaussCellGradVariable import _GaussCellGradVariable
-            self._gaussGrad = _GaussCellGradVariable(var = self, name = "%s_gauss_grad" % self.name)
+            self._gaussGrad = _GaussCellGradVariable(
+                var=self, name=f"{self.name}_gauss_grad"
+            )
+
 
         return self._gaussGrad
 
@@ -274,8 +270,10 @@ class CellVariable(_MeshVariable):
 
         if not hasattr(self, '_leastSquaresGrad'):
             from fipy.variables.leastSquaresCellGradVariable import _LeastSquaresCellGradVariable
-            self._leastSquaresGrad = _LeastSquaresCellGradVariable(var = self,
-                    name = "%s_least_squares_grad" % self.name)
+            self._leastSquaresGrad = _LeastSquaresCellGradVariable(
+                var=self, name=f"{self.name}_least_squares_grad"
+            )
+
 
         return self._leastSquaresGrad
 
@@ -445,10 +443,7 @@ class CellVariable(_MeshVariable):
         >>> print(v1.old)
         [6 9]
         """
-        if self._old is None:
-            return self
-        else:
-            return self._old
+        return self if self._old is None else self._old
 ##             import weakref
 ##          return weakref.proxy(self._old)
 
@@ -474,11 +469,11 @@ class CellVariable(_MeshVariable):
         if self._old is not None:
             self.value = (self._old.value)
 
-    def _getShapeFromMesh(mesh):
+    def _getShapeFromMesh(self):
         """
         Return the shape of this variable type, given a particular mesh.
         """
-        return (mesh.numberOfCells,)
+        return (self.numberOfCells, )
 
     _getShapeFromMesh = staticmethod(_getShapeFromMesh)
 
@@ -516,10 +511,7 @@ class CellVariable(_MeshVariable):
         import sys
         self._refcount = sys.getrefcount(self)
 
-        hasOld = 0
-        if dict['old'] is not None:
-            hasOld = 1
-
+        hasOld = 1 if dict['old'] is not None else 0
         self.__init__(mesh=dict['mesh'], name=dict['name'], value=dict['value'], unit=dict['unit'], hasOld=hasOld)
 ##         self.__init__(hasOld=hasOld, **dict)
         if self._old is not None:

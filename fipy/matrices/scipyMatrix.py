@@ -35,10 +35,7 @@ class _ScipyMatrix(_SparseMatrix):
 
     def __getitem__(self, index):
         m = self.matrix[index]
-        if isinstance(m, (type(0), type(0.))):
-            return m
-        else:
-            return _ScipyMatrix(matrix=m)
+        return m if isinstance(m, (type(0), type(0.))) else _ScipyMatrix(matrix=m)
 
     def __iadd__(self, other):
         return self._iadd(other)
@@ -79,10 +76,7 @@ class _ScipyMatrix(_SparseMatrix):
             AttributeError: 'int' object has no attribute 'matrix'
         """
 
-        if other == 0:
-            return self
-        else:
-            return _ScipyMatrix(matrix=self.matrix + other.matrix)
+        return self if other == 0 else _ScipyMatrix(matrix=self.matrix + other.matrix)
 
     __radd__ = __add__
 
@@ -90,10 +84,9 @@ class _ScipyMatrix(_SparseMatrix):
 
         if other == 0:
             return self
-        else:
-            L = self.matrix.copy()
-            L -= other.matrix
-            return _ScipyMatrix(matrix=L)
+        L = self.matrix.copy()
+        L -= other.matrix
+        return _ScipyMatrix(matrix=L)
 
     def __rsub__(self, other):
         return -self + other
@@ -136,19 +129,17 @@ class _ScipyMatrix(_SparseMatrix):
 
         if isinstance(other, _ScipyMatrix):
             return _ScipyMatrix(matrix=(self.matrix * other.matrix))
+        shape = numerix.shape(other)
+        if shape == ():
+            return _ScipyMatrix(matrix=(self.matrix * other))
+        elif shape == (N,):
+            return self.matrix * other
         else:
-            shape = numerix.shape(other)
-            if shape == ():
-                return _ScipyMatrix(matrix=(self.matrix * other))
-            elif shape == (N,):
-                return self.matrix * other
-            else:
-                raise TypeError
+            raise TypeError
 
     def __rmul__(self, other):
         if isinstance(numerix.ones(1, 'l'), type(other)):
-            y = self.matrix.transpose() * other.copy()
-            return y
+            return self.matrix.transpose() * other.copy()
         else:
             return self * other
 

@@ -7,7 +7,7 @@ import unittest
 
 class _LateImportTestCase(unittest.TestCase):
     def __str__(self):
-        return "import %s" % self.moduleName
+        return f"import {self.moduleName}"
 
     def _post__init__(self, moduleName, suite):
         self.moduleName = moduleName
@@ -41,11 +41,7 @@ class _LateImportTestSuite(unittest.TestSuite):
             self._addTestModule(moduleName = moduleName, base = base)
 
     def _addTestModule(self, moduleName, base = '__main__', testClass = _LateImportTestCase):
-        if base == '__main__':
-            base = []
-        else:
-            base = base.split('.')[:-1]
-
+        base = [] if base == '__main__' else base.split('.')[:-1]
         test = testClass()
         test._post__init__(".".join(base + [moduleName]), self)
         self.addTest(test)

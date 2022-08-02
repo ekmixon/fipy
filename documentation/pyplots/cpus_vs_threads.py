@@ -18,14 +18,14 @@ linestyles = {1: '-', 2: '--', 4: '-.', 16: ':'}
 
 for solver, group1 in df.groupby('solver'):
     stats = group1.groupby('nthreads')
-    
+
     av = stats.get_group(1).solvetime.mean() / stats.solvetime.mean()
     st = stats.get_group(1).solvetime.mean() / stats.solvetime.std()
-    
+
     ax.errorbar(av.index, av, yerr=st, 
                 marker=markers[solver], color=colors[solver], linewidth=2,
                 markersize=12, label=solver)
-                    
+
 plt.xscale('log')
 plt.yscale('log')
 

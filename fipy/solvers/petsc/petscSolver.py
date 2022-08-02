@@ -30,7 +30,7 @@ class PETScSolver(Solver):
                 RHSvector = self.RHSvector
             else:
                 RHSvector = numerix.reshape(numerix.asarray(self.RHSvector), self.var.shape)
-                
+
             overlappingRHSvector = self.matrix._fipy2petscGhost(var=RHSvector)
 
             self.globalVectors = (globalMatrix, overlappingVector, overlappingRHSvector)
@@ -74,14 +74,13 @@ class PETScSolver(Solver):
     def _calcResidualVector(self, residualFn=None):
         if residualFn is not None:
             return residualFn(self.var, self.matrix, self.RHSvector)
-        else:
-            residual = self._calcResidualVector_()
-            
-            residual.ghostUpdate()
-            with residual.localForm() as lf:
-                arr = numerix.array(lf)
-            residual.destroy()
-            return arr
+        residual = self._calcResidualVector_()
+
+        residual.ghostUpdate()
+        with residual.localForm() as lf:
+            arr = numerix.array(lf)
+        residual.destroy()
+        return arr
 
     def _calcResidualVector_(self):
         globalMatrix, overlappingVector, overlappingRHSvector = self._globalMatrixAndVectors
@@ -93,12 +92,11 @@ class PETScSolver(Solver):
     def _calcResidual(self, residualFn=None):
         if residualFn is not None:
             return residualFn(self.var, self.matrix, self.RHSvector)
-        else:
-            comm = self.var.mesh.communicator
-            residual = self._calcResidualVector_()
-            norm = comm.Norm2(residual)
-            residual.destroy()
-            return norm
+        comm = self.var.mesh.communicator
+        residual = self._calcResidualVector_()
+        norm = comm.Norm2(residual)
+        residual.destroy()
+        return norm
         
     def _calcRHSNorm(self):
         return self.nonOverlappingRHSvector.Norm2()

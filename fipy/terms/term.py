@@ -66,19 +66,15 @@ class Term(object):
         else:
             self._matrix = None
 
-        if self._cacheRHSvector:
-            self._RHSvector = RHSvector
-        else:
-            self._RHSvector = None
+        self._RHSvector = RHSvector if self._cacheRHSvector else None
 
     def _verifyVar(self, var):
-        if var is None:
-            if self.var is None:
-                raise SolutionVariableRequiredError
-            else:
-                return self.var
-        else:
+        if var is not None:
             return var
+        if self.var is None:
+            raise SolutionVariableRequiredError
+        else:
+            return self.var
 
     @property
     def _buildExplcitIfOther(self):
@@ -88,21 +84,19 @@ class Term(object):
         raise NotImplementedError
 
     def _vectorSize(self, var=None):
-        if var is None or var.rank != 1:
-            return 1
-        else:
-            return var.shape[0]
+        return 1 if var is None or var.rank != 1 else var.shape[0]
 
     def _getMatrixClass(self, solver, var):
         if self._vectorSize(var) > 1:
             from fipy.matrices.offsetSparseMatrix import OffsetSparseMatrix
-            SparseMatrix =  OffsetSparseMatrix(SparseMatrix=solver._matrixClass,
-                                               numberOfVariables=self._vectorSize(var),
-                                               numberOfEquations=self._vectorSize(var))
-        else:
-            SparseMatrix = solver._matrixClass
+            return OffsetSparseMatrix(
+                SparseMatrix=solver._matrixClass,
+                numberOfVariables=self._vectorSize(var),
+                numberOfEquations=self._vectorSize(var),
+            )
 
-        return SparseMatrix
+        else:
+            return solver._matrixClass
 
     def _prepareLinearSystem(self, var, solver, boundaryConditions, dt):
         solver = self.getDefaultSolver(var, solver)
@@ -116,10 +110,9 @@ class Term(object):
         for bc in boundaryConditions:
             bc._resetBoundaryConditionApplied()
 
-        if 'FIPY_DISPLAY_MATRIX' in os.environ:
-            if not hasattr(self, "_viewer"):
-                from fipy.viewers.matplotlibViewer.matplotlibSparseMatrixViewer import MatplotlibSparseMatrixViewer
-                Term._viewer = MatplotlibSparseMatrixViewer()
+        if 'FIPY_DISPLAY_MATRIX' in os.environ and not hasattr(self, "_viewer"):
+            from fipy.viewers.matplotlibViewer.matplotlibSparseMatrixViewer import MatplotlibSparseMatrixViewer
+            Term._viewer = MatplotlibSparseMatrixViewer()
 
         var, matrix, RHSvector = self._buildAndAddMatrices(var,
                                                            self._getMatrixClass(solver, var),
@@ -134,14 +127,11 @@ class Term(object):
         solver._storeMatrix(var=var, matrix=matrix, RHSvector=RHSvector)
 
         if 'FIPY_DISPLAY_MATRIX' in os.environ:
-            if var is None:
+            if var is not None and not hasattr(var, "name") or var is None:
                 name = ""
             else:
-                if not hasattr(var, "name"):
-                    name = ""
-                else:
-                    name = var.name
-            self._viewer.title = r"%s %s" % (name, repr(self))
+                name = var.name
+            self._viewer.title = f"{name} {repr(self)}"
             from fipy.variables.coupledCellVariable import _CoupledCellVariable
             if isinstance(solver.RHSvector, _CoupledCellVariable):
                 RHSvector = solver.RHSvector.globalValue
@@ -404,9 +394,8 @@ class Term(object):
     def __add__(self, other):
         if isinstance(other, (int, float)) and other == 0:
             return self
-        else:
-            from fipy.terms.binaryTerm import _BinaryTerm
-            return _BinaryTerm(self, other)
+        from fipy.terms.binaryTerm import _BinaryTerm
+        return _BinaryTerm(self, other)
 
     __radd__ = __add__
 

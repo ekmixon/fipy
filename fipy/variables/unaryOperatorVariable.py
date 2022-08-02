@@ -31,6 +31,8 @@ def _UnaryOperatorVariable(operatorClass=None):
     True
     """
 
+
+
     class unOp(operatorClass):
         def _calcValue_(self):
             return self.op(self.var[0].value)
@@ -38,14 +40,15 @@ def _UnaryOperatorVariable(operatorClass=None):
         @property
         def unit(self):
             assert(hasattr(self, "_unit") == True)
-            if self._unit is None:
-                try:
-                    var = self._varProxy
-                    return self._extractUnit(self.op(var[0]))
-                except:
-                    return self._extractUnit(self._calcValue())
-            else:
+            if self._unit is not None:
                 return self._unit
+
+            try:
+                var = self._varProxy
+                return self._extractUnit(self.op(var[0]))
+            except:
+                return self._extractUnit(self._calcValue())
+
 
     return unOp
 
